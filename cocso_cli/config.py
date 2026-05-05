@@ -215,18 +215,19 @@ def get_project_root() -> Path:
 
 
 def get_display_name(default: Optional[str] = None) -> str:
-    """Return the user's display name from ``config.yaml``.
+    """Return the user/회사 식별 이름.
 
-    Reads ``user.display_name`` from ``~/.cocso/config.yaml``. Falls back
-    to ``default`` when provided, otherwise to the OS username. Pure
-    convenience helper — code that wants the user's preferred display name
-    (banner greeting, response prefix, etc.) calls this once.
-
-    Examples in ``config.yaml``::
-
-        user:
-          display_name: "Johnny"
+    Resolution 순서:
+      1. ``COCSO_COMPANY_NAME`` 환경변수 — 회사 배포 시 클라이언트사 이름.
+         이 값이 설정되면 OS 사용자명 대신 회사명으로 에이전트가 인식.
+      2. ``user.display_name`` (``~/.cocso/config.yaml``)
+      3. ``default`` 인자
+      4. OS 사용자명 (`getpass.getuser`)
+      5. 마지막 폴백 ``"user"``
     """
+    company = os.environ.get("COCSO_COMPANY_NAME", "").strip()
+    if company:
+        return company
     try:
         cfg = load_config() or {}
         name = cfg_get(cfg, "user", "display_name", default="")

@@ -1924,20 +1924,38 @@ def _load_mcp_config() -> Dict[str, dict]:
 
     ``${ENV_VAR}`` placeholders in string values are resolved from
     ``os.environ`` (which includes ``~/.cocso/.env`` loaded at startup).
+
+    Auto-registration: when ``COCSO_MCP_URL`` is set, a ``cocso`` server is
+    injected automatically so client deployments don't need to edit
+    ``config.yaml``. ``COCSO_CLIENT_KEY`` (if set) is sent as the
+    ``Authorization: Bearer <key>`` header.
     """
+    # Ensure .env vars are available
+    try:
+        from cocso_cli.env_loader import load_cocso_dotenv
+        load_cocso_dotenv()
+    except Exception:
+        pass
+
     try:
         from cocso_cli.config import load_config
-        config = load_config()
-        servers = config.get("mcp_servers")
-        if not servers or not isinstance(servers, dict):
-            return {}
-        # Ensure .env vars are available for interpolation
-        try:
-            from cocso_cli.env_loader import load_cocso_dotenv
-            load_cocso_dotenv()
-        except Exception:
-            pass
-        return {name: _interpolate_env_vars(cfg) for name, cfg in servers.items()}
+        config = load_config() or {}
+        servers = config.get("mcp_servers") or {}
+        if not isinstance(servers, dict):
+            servers = {}
+        servers = {name: _interpolate_env_vars(cfg) for name, cfg in servers.items()}
+
+        # Auto-register the COCSO server from env vars (only if user didn't
+        # already define one named "cocso" in config.yaml).
+        cocso_url = os.environ.get("COCSO_MCP_URL", "").strip()
+        if cocso_url and "cocso" not in servers:
+            entry: dict = {"url": cocso_url}
+            client_key = os.environ.get("COCSO_CLIENT_KEY", "").strip()
+            if client_key:
+                entry["headers"] = {"Authorization": f"Bearer {client_key}"}
+            servers["cocso"] = entry
+
+        return servers
     except Exception as exc:
         logger.debug("Failed to load MCP config: %s", exc)
         return {}
