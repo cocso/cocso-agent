@@ -1,0 +1,28 @@
+{
+  "name": "cocso-agent",
+  "version": "0.1.0",
+  "description": "A slim COCSO-derived agent focused on Discord, Slack, Telegram, and a reduced model/provider surface.",
+  "private": true,
+  "scripts": {
+    "postinstall": "echo '✅ COCSO browser helpers ready. Run: python run_agent.py --help'"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/cocso/cocso-agent.git"
+  },
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/cocso/cocso-agent/issues"
+  },
+  "homepage": "https://github.com/cocso/cocso-agent#readme",
+  "dependencies": {
+    "@askjo/camofox-browser": "^1.5.2",
+    "agent-browser": "^0.26.0"
+  },
+  "overrides": {
+    "lodash": "4.18.1"
+  },
+  "engines": {
+    "node": ">=20.0.0"
+  }
+}

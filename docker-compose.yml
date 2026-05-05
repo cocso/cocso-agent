@@ -1,0 +1,34 @@
+#
+# docker-compose.yml for COCSO Agent
+#
+# Usage:
+#   COCSO_UID=$(id -u) COCSO_GID=$(id -g) docker compose up -d
+#
+# Set COCSO_UID / COCSO_GID to the host user that owns ~/.cocso so
+# files created inside the container stay readable/writable on the host.
+# The entrypoint remaps the internal `cocso` user to these values via
+# usermod/groupmod + gosu.
+#
+# Security notes:
+#   - Bot tokens and provider API keys live in ~/.cocso/.env on the host
+#     and are bind-mounted in. Treat that file like any other secret file.
+#   - The gateway's OpenAI-compatible API server is OFF by default. If you
+#     uncomment API_SERVER_HOST=0.0.0.0 below, API_SERVER_KEY is mandatory.
+#
+services:
+  gateway:
+    build: .
+    image: cocso-agent:0.1.0
+    container_name: cocso
+    restart: unless-stopped
+    network_mode: host
+    volumes:
+      - ~/.cocso:/opt/data
+    environment:
+      - COCSO_UID=${COCSO_UID:-10000}
+      - COCSO_GID=${COCSO_GID:-10000}
+      # Optional: expose the OpenAI-compatible API server beyond localhost.
+      # Uncomment BOTH lines (API_SERVER_KEY is mandatory for non-loopback).
+      # - API_SERVER_HOST=0.0.0.0
+      # - API_SERVER_KEY=${API_SERVER_KEY}
+    command: ["gateway", "run"]

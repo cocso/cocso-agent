@@ -1,0 +1,1 @@
+# COCSO plugins package
