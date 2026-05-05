@@ -166,9 +166,9 @@ DEFAULT_BANNER_LAYOUT = {
     "show_cwd": True,            # current working directory line
     "show_session_id": True,     # "Session: <id>" line
     "show_custom": True,         # custom user lines at the top of the right column
-    "show_tools": True,          # "Available Tools" section
+    "show_tools": False,          # "Available Tools" section
     "show_mcp_servers": True,    # "MCP Servers" section (only if any configured)
-    "show_skills": True,         # "Available Skills" section
+    "show_skills": False,         # "Available Skills" section
     "show_profile": True,        # "Profile: <name>" line (only if non-default)
     "show_summary": True,        # "N tools · N skills · /help..." footer
     "show_update_warning": True, # "⚠ N commits behind" line
