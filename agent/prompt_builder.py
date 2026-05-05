@@ -132,6 +132,7 @@ def _strip_yaml_frontmatter(content: str) -> str:
 # =========================================================================
 
 from cocso_cli.branding import (
+    DEFAULT_AGENT_IDENTITY,  # noqa: F401 — re-exported for run_agent
     DEFAULT_REPO_HTTPS_URL as _AGENT_DOCS_URL,
     build_agent_identity,
     default_branding as _default_branding,

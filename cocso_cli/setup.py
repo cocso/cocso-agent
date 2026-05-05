@@ -13,6 +13,7 @@ Config files are stored in ~/.cocso/ for easy access.
 
 import logging
 import os
+import re
 import shutil
 import sys
 import copy
@@ -194,11 +195,26 @@ def prompt(question: str, default: str = None, password: bool = False) -> str:
     else:
         display = f"{question}: "
 
+    # Drain any stale bytes left in the TTY input buffer (e.g. leftover
+    # newline from a prior curses screen) so getpass/input start fresh.
+    try:
+        import termios
+        if sys.stdin.isatty():
+            termios.tcflush(sys.stdin.fileno(), termios.TCIFLUSH)
+    except Exception:
+        pass
+
     try:
         if password:
             import getpass
 
             value = getpass.getpass(color(display, Colors.YELLOW))
+            # getpass may silently return "" when stdin is in an odd state
+            # after curses. Fall back to visible input so the user can
+            # actually type their token instead of seeing the prompt skip.
+            if not value:
+                print_warning("(input not captured; falling back to visible prompt)")
+                value = input(color(display, Colors.YELLOW))
         else:
             value = input(color(display, Colors.YELLOW))
 
@@ -264,20 +280,20 @@ def prompt_yes_no(question: str, default: bool = True) -> bool:
 
     while True:
         try:
-            value = (
-                input(color(f"{question} [{default_str}]: ", Colors.YELLOW))
-                .strip()
-                .lower()
-            )
+            raw = input(color(f"{question} [{default_str}]: ", Colors.YELLOW))
         except (KeyboardInterrupt, EOFError):
             print()
             sys.exit(1)
 
+        # Strip whitespace and any leading terminal escape sequences
+        # (e.g. leftover bytes from a curses screen on the same TTY).
+        value = re.sub(r"^[^A-Za-z]*", "", raw.strip()).lower()
+
         if not value:
             return default
-        if value in ("y", "yes"):
+        if value[:1] == "y":
             return True
-        if value in ("n", "no"):
+        if value[:1] == "n":
             return False
         print_error("Please enter 'y' or 'n'")
 
