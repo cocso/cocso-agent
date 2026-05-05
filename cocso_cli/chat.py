@@ -2760,7 +2760,7 @@ class COCSOCLI:
 
     def _print_user_message_preview(self, user_input: str) -> None:
         """Render a user message using the normal chat scrollback style."""
-        ChatConsole().print(f"[{_accent_hex()}]{'─' * 40}[/]")
+        ChatConsole().print(f"[{_accent_hex()}]{'─' * shutil.get_terminal_size().columns}[/]")
         text = str(user_input or "")
         if "\n" in text:
             ChatConsole().print(self._format_submitted_user_message_preview(text))
@@ -6499,10 +6499,10 @@ class COCSOCLI:
                     self._app.invalidate()
                     time.sleep(0.05)  # brief pause for refresh
                 print()
-                ChatConsole().print(f"[{_accent_hex()}]{'─' * 40}[/]")
+                ChatConsole().print(f"[{_accent_hex()}]{'─' * shutil.get_terminal_size().columns}[/]")
                 _cprint(f"  ✅ Background task #{task_num} complete")
                 _cprint(f"  Prompt: \"{prompt[:60]}{'...' if len(prompt) > 60 else ''}\"")
-                ChatConsole().print(f"[{_accent_hex()}]{'─' * 40}[/]")
+                ChatConsole().print(f"[{_accent_hex()}]{'─' * shutil.get_terminal_size().columns}[/]")
                 if response:
                     try:
                         from cocso_cli.skin_engine import get_active_skin
@@ -8224,7 +8224,7 @@ class COCSOCLI:
         # Add user message to history
         self.conversation_history.append({"role": "user", "content": message})
 
-        ChatConsole().print(f"[{_accent_hex()}]{'─' * 40}[/]")
+        ChatConsole().print(f"[{_accent_hex()}]{'─' * shutil.get_terminal_size().columns}[/]")
         print(flush=True)
 
         try:
