@@ -1935,6 +1935,9 @@ def run_setup_wizard(args):
     print()
     print_info("You can edit these files directly or use 'cocso config edit'")
 
+    # Section 0: COCSO 회사 식별
+    setup_cocso(config)
+
     # Section 1: Model & Provider
     setup_model_provider(config)
 
@@ -1977,6 +1980,9 @@ def _run_first_time_quick_setup(config: dict, cocso_home, is_existing: bool):
     settings, and tools — the user can customize later via
     ``cocso setup <section>``.
     """
+    # Step 0: COCSO 회사 식별 (회사명 / MCP URL / 클라이언트 키)
+    setup_cocso(config)
+
     # Step 1: Model & Provider (essential — skips rotation/vision/TTS)
     setup_model_provider(config, quick=True)
 
