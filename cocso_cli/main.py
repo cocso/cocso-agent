@@ -861,7 +861,7 @@ def cmd_chat(args):
         os.environ["COCSO_SESSION_SOURCE"] = args.source
 
     # Import and run the CLI
-    from cli import main as cli_main
+    from cocso_cli.chat import main as cli_main
 
     # Build kwargs from args
     kwargs = {

@@ -2126,7 +2126,7 @@ def _load_config() -> dict:
     of the entry point (CLI, gateway, cron).
     """
     try:
-        from cli import CLI_CONFIG
+        from cocso_cli.chat import CLI_CONFIG
 
         cfg = CLI_CONFIG.get("delegation", {})
         if cfg:
