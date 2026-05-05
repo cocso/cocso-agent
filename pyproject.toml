@@ -10,10 +10,6 @@ readme = "README.md"
 requires-python = ">=3.11"
 authors = [{ name = "Jeonhui Lee", email = "johnny@cocso.ai" }]
 license = { text = "MIT" }
-
-[project.urls]
-Homepage = "https://github.com/cocso/cocso-agent"
-Repository = "https://github.com/cocso/cocso-agent"
 dependencies = [
   # Core — pinned to known-good ranges to limit supply chain attack surface
   "openai>=2.21.0,<3",
@@ -35,6 +31,10 @@ dependencies = [
   # Skills Hub (GitHub App JWT auth — optional, only needed for bot identity)
   "PyJWT[crypto]>=2.12.0,<3",  # CVE-2026-32597
 ]
+
+[project.urls]
+Homepage = "https://github.com/cocso/cocso-agent"
+Repository = "https://github.com/cocso/cocso-agent"
 
 [project.optional-dependencies]
 dev = ["debugpy>=1.8.0,<2", "pytest>=9.0.2,<10", "pytest-asyncio>=1.3.0,<2", "pytest-xdist>=3.0,<4", "mcp>=1.2.0,<2", "ty>=0.0.1a29,<0.0.22", "ruff"]
