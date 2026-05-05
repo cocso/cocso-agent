@@ -4540,7 +4540,7 @@ def _cmd_update_impl(args, gateway_mode: bool):
         # attributes like display_cocso_home() added since the last release.
         try:
             import importlib
-            import cocso_constants as _hc
+            from cocso_core import cocso_constants as _hc
 
             importlib.reload(_hc)
         except Exception:

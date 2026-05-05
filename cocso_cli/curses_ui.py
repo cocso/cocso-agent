@@ -278,6 +278,11 @@ def curses_radiolist(
         flush_stdin()
         return result_holder[0] if result_holder[0] is not None else cancel_returns
 
+    except KeyboardInterrupt:
+        # User cancelled curses dialog with Ctrl+C — propagate cancel without
+        # tearing down the wizard.
+        flush_stdin()
+        return cancel_returns
     except Exception:
         return _radio_numbered_fallback(title, items, selected, cancel_returns)
 

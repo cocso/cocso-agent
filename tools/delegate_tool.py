@@ -864,7 +864,7 @@ def _build_child_agent(
         parent_toolsets = set(parent_enabled)
     elif parent_agent and hasattr(parent_agent, "valid_tool_names"):
         # enabled_toolsets is None (all tools) — derive from loaded tool names
-        import model_tools
+        from cocso_core import model_tools
 
         parent_toolsets = {
             ts
@@ -1077,7 +1077,7 @@ def _run_single_child(
 
     # Restore parent tool names using the value saved before child construction
     # mutated the global. This is the correct parent toolset, not the child's.
-    import model_tools
+    from cocso_core import model_tools
 
     _saved_tool_names = getattr(
         child, "_delegate_saved_tool_names", list(model_tools._last_resolved_tool_names)
@@ -1577,7 +1577,7 @@ def _run_single_child(
 
         # Restore the parent's tool names so the process-global is correct
         # for any subsequent execute_code calls or other consumers.
-        import model_tools
+        from cocso_core import model_tools
 
         saved_tool_names = getattr(child, "_delegate_saved_tool_names", None)
         if isinstance(saved_tool_names, list):
@@ -1726,7 +1726,7 @@ def delegate_task(
     # Save parent tool names BEFORE any child construction mutates the global.
     # _build_child_agent() calls AIAgent() which calls get_tool_definitions(),
     # which overwrites model_tools._last_resolved_tool_names with child's toolset.
-    import model_tools as _model_tools
+    from cocso_core import model_tools as _model_tools
 
     _parent_tool_names = list(_model_tools._last_resolved_tool_names)
 
