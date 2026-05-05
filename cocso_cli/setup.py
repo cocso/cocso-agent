@@ -359,7 +359,7 @@ def _print_setup_summary(config: dict, cocso_home):
     """Print the setup completion summary."""
     # Tool availability summary
     print()
-    print_header("Tool Availability Summary")
+    print_header("도구 가용성 요약")
 
     tool_status = []
 
@@ -651,9 +651,9 @@ def setup_model_provider(config: dict, *, quick: bool = False):
     """
     from cocso_cli.config import load_config, save_config
 
-    print_header("Inference Provider")
-    print_info("Choose how to connect to your main chat model.")
-    print_info(f"   Guide: {_DOCS_BASE}/integrations/providers")
+    print_header("추론 Provider")
+    print_info("메인 채팅 모델 연결 방식 선택.")
+    print_info(f"   가이드: {_DOCS_BASE}/integrations/providers")
     print()
 
     # Delegate to the shared cocso model flow — handles provider picker,
@@ -663,11 +663,11 @@ def setup_model_provider(config: dict, *, quick: bool = False):
         select_provider_and_model()
     except (SystemExit, KeyboardInterrupt):
         print()
-        print_info("Provider setup skipped.")
+        print_info("Provider 설정 건너뜀.")
     except Exception as exc:
         logger.debug("select_provider_and_model error during setup: %s", exc)
-        print_warning(f"Provider setup encountered an error: {exc}")
-        print_info("You can try again later with: cocso model")
+        print_warning(f"Provider 설정 중 오류: {exc}")
+        print_info("나중에 다시 시도: cocso model")
 
     # Re-sync the wizard's config dict from what cmd_model saved to disk.
     # This is critical: cmd_model writes to disk via its own load/save cycle,
@@ -699,7 +699,7 @@ def setup_model_provider(config: dict, *, quick: bool = False):
             manual_count = sum(1 for entry in entries if str(getattr(entry, "source", "")).startswith("manual"))
             auto_count = entry_count - manual_count
             print()
-            print_header("Same-Provider Fallback & Rotation")
+            print_header("동일 Provider 폴백 & 로테이션")
             print_info(
                 f"{default_branding('agent_short_name', 'COCSO')} can keep multiple credentials for one provider and rotate between"
             )
@@ -790,7 +790,7 @@ def setup_model_provider(config: dict, *, quick: bool = False):
         _prov_display = _prov_names.get(selected_provider, selected_provider or "your provider")
 
         print()
-        print_header("Vision & Image Analysis (optional)")
+        print_header("비전 / 이미지 분석 (선택)")
         print_info(f"Vision uses a separate multimodal backend. {_prov_display}")
         print_info("doesn't currently provide one COCSO can auto-use for vision,")
         print_info("so choose a backend now or skip and configure later.")
@@ -847,19 +847,19 @@ def setup_model_provider(config: dict, *, quick: bool = False):
 
 def setup_terminal_backend(config: dict):
     """Configure the terminal execution backend."""
-    print_header("Terminal Backend")
-    print_info("Choose where COCSO runs shell commands and code.")
-    print_info("This affects tool execution, file access, and isolation.")
-    print_info(f"   Guide: {_DOCS_BASE}/developer-guide/environments")
+    print_header("터미널 백엔드")
+    print_info("COCSO 가 shell 명령/코드를 실행하는 위치 선택.")
+    print_info("도구 실행, 파일 접근, 격리에 영향.")
+    print_info(f"   가이드: {_DOCS_BASE}/developer-guide/environments")
     print()
 
     current_backend = cfg_get(config, "terminal", "backend", default="local")
 
     # Build backend choices with descriptions
     terminal_choices = [
-        "Local - run directly on this machine (default)",
-        "Docker - isolated container with configurable resources",
-        "SSH - run on a remote machine",
+        "Local — 이 머신에서 직접 실행 (default)",
+        "Docker — 격리 컨테이너, 리소스 설정 가능",
+        "SSH — 원격 머신에서 실행",
     ]
     idx_to_backend = {0: "local", 1: "docker", 2: "ssh"}
 
@@ -867,34 +867,32 @@ def setup_terminal_backend(config: dict):
 
     # Add keep current option
     keep_current_idx = next_idx
-    terminal_choices.append(f"Keep current ({current_backend})")
+    terminal_choices.append(f"현재 유지 ({current_backend})")
     idx_to_backend[keep_current_idx] = current_backend
 
     terminal_idx = prompt_choice(
-        "Select terminal backend:", terminal_choices, keep_current_idx
+        "터미널 백엔드 선택:", terminal_choices, keep_current_idx
     )
 
     selected_backend = idx_to_backend.get(terminal_idx)
 
     if terminal_idx == keep_current_idx:
-        print_info(f"Keeping current backend: {current_backend}")
+        print_info(f"현재 백엔드 유지: {current_backend}")
         return
 
     config.setdefault("terminal", {})["backend"] = selected_backend
 
     if selected_backend == "local":
-        print_success("Terminal backend: Local")
-        print_info("Commands run directly on this machine.")
+        print_success("터미널 백엔드: Local")
+        print_info("이 머신에서 직접 실행됨.")
 
         # CWD for messaging
         print()
-        print_info("Working directory for messaging sessions:")
-        print_info("  When using COCSO via Telegram/Discord, this is where")
-        print_info(
-            "  the agent starts. CLI mode always starts in the current directory."
-        )
+        print_info("메시징 세션의 작업 디렉토리:")
+        print_info("  Telegram/Discord 로 COCSO 사용 시 에이전트 시작 위치.")
+        print_info("  CLI 모드는 항상 현재 디렉토리에서 시작.")
         current_cwd = cfg_get(config, "terminal", "cwd", default="")
-        cwd = prompt("  Messaging working directory", current_cwd or str(Path.home()))
+        cwd = prompt("  메시징 작업 디렉토리", current_cwd or str(Path.home()))
         if cwd:
             config["terminal"]["cwd"] = cwd
 
@@ -1020,7 +1018,7 @@ def _apply_default_agent_settings(config: dict):
 def setup_agent_settings(config: dict):
     """Configure agent behavior: iterations, progress display, compression, session reset."""
 
-    print_header("Agent Settings")
+    print_header("에이전트 설정")
     print_info(f"   Guide: {_DOCS_BASE}/user-guide/configuration")
     print()
 
@@ -1066,7 +1064,7 @@ def setup_agent_settings(config: dict):
         print_warning(f"Unknown mode '{mode}', keeping '{current_mode}'")
 
     # ── Context Compression ──
-    print_header("Context Compression")
+    print_header("컨텍스트 압축")
     print_info("Automatically summarizes old messages when context gets too long.")
     print_info(
         "Higher threshold = compress later (use more context). Lower = compress sooner."
@@ -1088,7 +1086,7 @@ def setup_agent_settings(config: dict):
     )
 
     # ── Session Reset Policy ──
-    print_header("Session Reset Policy")
+    print_header("세션 리셋 정책")
     print_info(
         "Messaging sessions (Telegram, Discord, etc.) accumulate context over time."
     )
@@ -1194,61 +1192,60 @@ def _setup_telegram():
     print_header("Telegram")
     existing = get_env_value("TELEGRAM_BOT_TOKEN")
     if existing:
-        print_info("Telegram: already configured")
-        if not prompt_yes_no("Reconfigure Telegram?", False):
+        print_info("Telegram: 이미 설정됨")
+        if not prompt_yes_no("Telegram 재설정?", False):
             # Check missing allowlist on existing config
             if not get_env_value("TELEGRAM_ALLOWED_USERS"):
-                print_info("⚠️  Telegram has no user allowlist - anyone can use your bot!")
-                if prompt_yes_no("Add allowed users now?", True):
-                    print_info("   To find your Telegram user ID: message @userinfobot")
-                    allowed_users = prompt("Allowed user IDs (comma-separated)")
+                print_info("⚠️  Telegram 허용 사용자 없음 — 누구나 봇 사용 가능!")
+                if prompt_yes_no("지금 허용 사용자 추가?", True):
+                    print_info("   Telegram user ID 찾기: @userinfobot 에 메시지")
+                    allowed_users = prompt("허용 사용자 ID (콤마로 구분)")
                     if allowed_users:
                         save_env_value("TELEGRAM_ALLOWED_USERS", allowed_users.replace(" ", ""))
-                        print_success("Telegram allowlist configured")
+                        print_success("Telegram 허용 사용자 저장")
             return
 
-    print_info("Create a bot via @BotFather on Telegram")
+    print_info("@BotFather 로 Telegram 봇 생성")
     import re
 
     while True:
-        token = prompt("Telegram bot token", password=True)
+        token = prompt("Telegram 봇 토큰", password=True)
         if not token:
             return
         if not re.match(r"^\d+:[A-Za-z0-9_-]{30,}$", token):
             print_error(
-                "Invalid token format. Expected: <numeric_id>:<alphanumeric_hash> "
-                "(e.g., 123456789:ABCdefGHI-jklMNOpqrSTUvwxYZ)"
+                "토큰 형식 오류. <숫자>:<알파벳/숫자> 형태여야 함 "
+                "(예: 123456789:ABCdefGHI-jklMNOpqrSTUvwxYZ)"
             )
             continue
         break
     save_env_value("TELEGRAM_BOT_TOKEN", token)
-    print_success("Telegram token saved")
+    print_success("Telegram 토큰 저장")
 
     print()
-    print_info("🔒 Security: Restrict who can use your bot")
-    print_info("   To find your Telegram user ID:")
-    print_info("   1. Message @userinfobot on Telegram")
-    print_info("   2. It will reply with your numeric ID (e.g., 123456789)")
+    print_info("🔒 보안: 봇 사용자 제한")
+    print_info("   Telegram user ID 찾기:")
+    print_info("   1. Telegram 에서 @userinfobot 에 메시지 전송")
+    print_info("   2. 숫자 ID 받음 (예: 123456789)")
     print()
     allowed_users = prompt(
-        "Allowed user IDs (comma-separated, leave empty for open access)"
+        "허용 사용자 ID (콤마로 구분, 비우면 모두 허용)"
     )
     if allowed_users:
         save_env_value("TELEGRAM_ALLOWED_USERS", allowed_users.replace(" ", ""))
-        print_success("Telegram allowlist configured - only listed users can use the bot")
+        print_success("Telegram 허용 사용자 저장 — 등록된 사용자만 봇 사용 가능")
     else:
-        print_info("⚠️  No allowlist set - anyone who finds your bot can use it!")
+        print_info("⚠️  허용 사용자 없음 — 봇을 찾는 누구나 사용 가능!")
 
     print()
-    print_info("📬 Home Channel: where COCSO delivers cron job results,")
-    print_info("   cross-platform messages, and notifications.")
-    print_info("   For Telegram DMs, this is your user ID (same as above).")
+    print_info("📬 홈 채널: COCSO 가 cron 결과/알림을 보내는 곳")
+    print_info("   Telegram DM 의 경우 user ID 와 동일.")
 
     first_user_id = allowed_users.split(",")[0].strip() if allowed_users else ""
     if first_user_id:
-        if prompt_yes_no(f"Use your user ID ({first_user_id}) as the home channel?", True):
+        if prompt_yes_no(f"홈 채널을 user ID ({first_user_id}) 로 설정?", True):
             save_env_value("TELEGRAM_HOME_CHANNEL", first_user_id)
-            print_success(f"Telegram home channel set to {first_user_id}")
+            print_success(f"Telegram 홈 채널: {first_user_id}")
         else:
             home_channel = prompt("Home channel ID (or leave empty to set later with /set-home in Telegram)")
             if home_channel:
@@ -1265,51 +1262,50 @@ def _setup_discord():
     print_header("Discord")
     existing = get_env_value("DISCORD_BOT_TOKEN")
     if existing:
-        print_info("Discord: already configured")
-        if not prompt_yes_no("Reconfigure Discord?", False):
+        print_info("Discord: 이미 설정됨")
+        if not prompt_yes_no("Discord 재설정?", False):
             if not get_env_value("DISCORD_ALLOWED_USERS"):
-                print_info("⚠️  Discord has no user allowlist - anyone can use your bot!")
-                if prompt_yes_no("Add allowed users now?", True):
-                    print_info("   To find Discord ID: Enable Developer Mode, right-click name → Copy ID")
-                    allowed_users = prompt("Allowed user IDs (comma-separated)")
+                print_info("⚠️  Discord 허용 사용자 없음 — 누구나 봇 사용 가능!")
+                if prompt_yes_no("지금 허용 사용자 추가?", True):
+                    print_info("   Discord ID 찾기: Developer Mode 활성화 → 이름 우클릭 → Copy ID")
+                    allowed_users = prompt("허용 사용자 ID (콤마로 구분)")
                     if allowed_users:
                         cleaned_ids = _clean_discord_user_ids(allowed_users)
                         save_env_value("DISCORD_ALLOWED_USERS", ",".join(cleaned_ids))
-                        print_success("Discord allowlist configured")
+                        print_success("Discord 허용 사용자 저장")
             return
 
-    print_info("Create a bot at https://discord.com/developers/applications")
-    token = prompt("Discord bot token", password=True)
+    print_info("https://discord.com/developers/applications 에서 봇 생성")
+    token = prompt("Discord 봇 토큰", password=True)
     if not token:
         return
     save_env_value("DISCORD_BOT_TOKEN", token)
-    print_success("Discord token saved")
+    print_success("Discord 토큰 저장")
 
     print()
-    print_info("🔒 Security: Restrict who can use your bot")
-    print_info("   To find your Discord user ID:")
-    print_info("   1. Enable Developer Mode in Discord settings")
-    print_info("   2. Right-click your name → Copy ID")
+    print_info("🔒 보안: 봇 사용자 제한")
+    print_info("   Discord user ID 찾기:")
+    print_info("   1. Discord 설정에서 Developer Mode 활성화")
+    print_info("   2. 이름 우클릭 → Copy ID")
     print()
-    print_info("   You can also use Discord usernames (resolved on gateway start).")
+    print_info("   Discord username 도 사용 가능 (gateway 시작 시 해석).")
     print()
     allowed_users = prompt(
-        "Allowed user IDs or usernames (comma-separated, leave empty for open access)"
+        "허용 사용자 ID/username (콤마로 구분, 비우면 모두 허용)"
     )
     if allowed_users:
         cleaned_ids = _clean_discord_user_ids(allowed_users)
         save_env_value("DISCORD_ALLOWED_USERS", ",".join(cleaned_ids))
-        print_success("Discord allowlist configured")
+        print_success("Discord 허용 사용자 저장")
     else:
-        print_info("⚠️  No allowlist set - anyone in servers with your bot can use it!")
+        print_info("⚠️  허용 사용자 없음 — 봇이 있는 서버의 누구나 사용 가능!")
 
     print()
-    print_info("📬 Home Channel: where COCSO delivers cron job results,")
-    print_info("   cross-platform messages, and notifications.")
-    print_info("   To get a channel ID: right-click a channel → Copy Channel ID")
-    print_info("   (requires Developer Mode in Discord settings)")
-    print_info("   You can also set this later by typing /set-home in a Discord channel.")
-    home_channel = prompt("Home channel ID (leave empty to set later with /set-home)")
+    print_info("📬 홈 채널: COCSO 가 cron 결과/알림을 보내는 곳")
+    print_info("   채널 ID 가져오기: 채널 우클릭 → Copy Channel ID")
+    print_info("   (Developer Mode 필요)")
+    print_info("   나중에 Discord 채널에서 /set-home 으로도 설정 가능.")
+    home_channel = prompt("홈 채널 ID (비우면 나중에 /set-home 으로 설정)")
     if home_channel:
         save_env_value("DISCORD_HOME_CHANNEL", home_channel)
 
@@ -1333,27 +1329,27 @@ def _setup_slack():
     print_header("Slack")
     existing = get_env_value("SLACK_BOT_TOKEN")
     if existing:
-        print_info("Slack: already configured")
-        if not prompt_yes_no("Reconfigure Slack?", False):
+        print_info("Slack: 이미 설정됨")
+        if not prompt_yes_no("Slack 재설정?", False):
             # Even without reconfiguring, offer to refresh the manifest so
             # new commands (e.g. /btw, /stop, ...) get registered in Slack.
             if prompt_yes_no(
-                "Regenerate the Slack app manifest with the latest command "
-                "list? (recommended after `cocso update`)",
+                "최신 명령 목록으로 Slack app manifest 재생성? "
+                "(`cocso update` 후 권장)",
                 True,
             ):
                 _write_slack_manifest_and_instruct()
             return
 
-    print_info("Steps to create a Slack app:")
-    print_info("   1. Go to https://api.slack.com/apps → Create New App")
-    print_info("      Pick 'From an app manifest' — we'll generate one for you below.")
-    print_info("   2. Enable Socket Mode: Settings → Socket Mode → Enable")
-    print_info("      • Create an App-Level Token with 'connections:write' scope")
-    print_info("   3. Install to Workspace: Settings → Install App")
-    print_info("   4. After installing, invite the bot to channels: /invite @YourBot")
+    print_info("Slack app 생성 단계:")
+    print_info("   1. https://api.slack.com/apps → Create New App")
+    print_info("      'From an app manifest' 선택 — 아래에서 자동 생성합니다.")
+    print_info("   2. Socket Mode 활성화: Settings → Socket Mode → Enable")
+    print_info("      • 'connections:write' scope 으로 App-Level Token 생성")
+    print_info("   3. Workspace 에 설치: Settings → Install App")
+    print_info("   4. 설치 후 채널에 봇 초대: /invite @YourBot")
     print()
-    print_info(f"   Full guide: {_DOCS_BASE}")
+    print_info(f"   가이드: {_DOCS_BASE}")
     print()
 
     # Generate and write manifest up-front so the user can paste it into
@@ -1369,21 +1365,21 @@ def _setup_slack():
     app_token = prompt("Slack App Token (xapp-...)", password=True)
     if app_token:
         save_env_value("SLACK_APP_TOKEN", app_token)
-    print_success("Slack tokens saved")
+    print_success("Slack 토큰 저장")
 
     print()
-    print_info("🔒 Security: Restrict who can use your bot")
-    print_info("   To find a Member ID: click a user's name → View full profile → ⋮ → Copy member ID")
+    print_info("🔒 보안: 봇 사용자 제한")
+    print_info("   Member ID 찾기: 사용자 이름 클릭 → View full profile → ⋮ → Copy member ID")
     print()
     allowed_users = prompt(
-        "Allowed user IDs (comma-separated, leave empty to deny everyone except paired users)"
+        "허용 사용자 ID (콤마로 구분, 비우면 paired 사용자 제외 모두 거부)"
     )
     if allowed_users:
         save_env_value("SLACK_ALLOWED_USERS", allowed_users.replace(" ", ""))
-        print_success("Slack allowlist configured")
+        print_success("Slack 허용 사용자 저장")
     else:
-        print_warning("⚠️  No Slack allowlist set - unpaired users will be denied by default.")
-        print_info("   Set SLACK_ALLOW_ALL_USERS=true or GATEWAY_ALLOW_ALL_USERS=true only if you intentionally want open workspace access.")
+        print_warning("⚠️  Slack 허용 사용자 없음 — paired 외 사용자는 기본 거부됨.")
+        print_info("   workspace 전체 개방 시 SLACK_ALLOW_ALL_USERS=true 또는 GATEWAY_ALLOW_ALL_USERS=true 설정.")
 
 
 def _write_slack_manifest_and_instruct():
@@ -1431,7 +1427,7 @@ def _write_slack_manifest_and_instruct():
 
 def _setup_webhooks():
     """Configure webhook integration."""
-    print_header("Webhooks")
+    print_header("Webhook")
     existing = get_env_value("WEBHOOK_ENABLED")
     if existing:
         print_info("Webhooks: already configured")
@@ -1477,9 +1473,9 @@ def setup_gateway(config: dict):
     """Configure messaging platform integrations."""
     from cocso_cli.gateway import _all_platforms, _platform_status, _configure_platform
 
-    print_header("Messaging Platforms")
-    print_info("Connect to messaging platforms to chat with COCSO from anywhere.")
-    print_info("Toggle with Space, confirm with Enter.")
+    print_header("메시징 플랫폼")
+    print_info("어디서든 COCSO 와 채팅하려면 메시징 플랫폼 연결.")
+    print_info("Space 로 토글, Enter 로 확정.")
     print()
 
     platforms = _all_platforms()
@@ -1493,10 +1489,10 @@ def setup_gateway(config: dict):
         if status == "configured":
             pre_selected.append(i)
 
-    selected = prompt_checklist("Select platforms to configure:", items, pre_selected)
+    selected = prompt_checklist("설정할 플랫폼 선택:", items, pre_selected)
 
     if not selected:
-        print_info("No platforms selected. Run 'cocso setup gateway' later to configure.")
+        print_info("선택된 플랫폼 없음. 나중에 'cocso setup gateway' 로 설정 가능.")
         return
 
     for idx in selected:
@@ -1897,13 +1893,13 @@ def run_setup_wizard(args):
             return
 
         print()
-        print_header("Reconfigure")
-        print_success("You already have COCSO configured.")
-        print_info("Running the full wizard — each prompt shows your current value.")
-        print_info("Press Enter to keep it, or type a new value to change it.")
+        print_header("재설정")
+        print_success("COCSO가 이미 설정되어 있습니다.")
+        print_info("풀 위저드 실행 — 각 항목에 현재 값이 default로 표시됩니다.")
+        print_info("Enter로 유지, 새 값을 입력하면 변경됩니다.")
         print_info("")
-        print_info("Tip: jump straight to a section with 'cocso setup cocso|model|")
-        print_info("     terminal|gateway|tools|agent', or fill only missing items with --quick.")
+        print_info("팁: 'cocso setup cocso|model|terminal|gateway|tools|agent' 로")
+        print_info("    특정 섹션만 실행하거나, --quick 으로 누락 항목만 채우기.")
         # Fall through to the "Full Setup — run all sections" block below.
         # --reconfigure is now the default on existing installs; the flag
         # is preserved for backwards compatibility but is a no-op here.
@@ -1914,12 +1910,12 @@ def run_setup_wizard(args):
         # --reconfigure / --quick on a fresh install are meaningless — fall
         # through to the normal first-time flow.
         if reconfigure_requested or quick_requested:
-            print_info("No existing configuration found — running first-time setup.")
+            print_info("기존 설정이 없습니다 — 첫 셋업을 진행합니다.")
             print()
 
-        setup_mode = prompt_choice("How would you like to set up COCSO?", [
-            "Quick setup — provider, model & messaging (recommended)",
-            "Full setup — configure everything",
+        setup_mode = prompt_choice("COCSO를 어떻게 셋업할까요?", [
+            "빠른 셋업 — provider, 모델, 메시징 (권장)",
+            "풀 셋업 — 모든 항목 설정",
         ], 0)
 
         if setup_mode == 0:
@@ -1927,13 +1923,13 @@ def run_setup_wizard(args):
             return
 
     # ── Full Setup — run all sections ──
-    print_header("Configuration Location")
-    print_info(f"Config file:  {get_config_path()}")
-    print_info(f"Secrets file: {get_env_path()}")
-    print_info(f"Data folder:  {cocso_home}")
-    print_info(f"Install dir:  {PROJECT_ROOT}")
+    print_header("설정 파일 위치")
+    print_info(f"Config 파일:  {get_config_path()}")
+    print_info(f"시크릿 파일: {get_env_path()}")
+    print_info(f"데이터 폴더: {cocso_home}")
+    print_info(f"설치 경로:   {PROJECT_ROOT}")
     print()
-    print_info("You can edit these files directly or use 'cocso config edit'")
+    print_info("파일 직접 수정하거나 'cocso config edit' 사용")
 
     # Section 0: COCSO 회사 식별
     setup_cocso(config)
@@ -1956,9 +1952,9 @@ def run_setup_wizard(args):
     _print_setup_summary(config, cocso_home)
 
     print()
-    print_info("Advanced configuration (optional):")
-    print_info("  cocso setup tools  — pick toolsets per platform")
-    print_info("  cocso setup agent  — tune iterations / compression / display")
+    print_info("고급 설정 (선택):")
+    print_info("  cocso setup tools  — 플랫폼별 toolset 선택")
+    print_info("  cocso setup agent  — iteration / 압축 / 표시 설정")
 
     _offer_launch_chat()
 
@@ -1966,7 +1962,7 @@ def run_setup_wizard(args):
 def _offer_launch_chat():
     """Prompt the user to jump straight into chat after setup."""
     print()
-    if not prompt_yes_no("Launch cocso chat now?", True):
+    if not prompt_yes_no("지금 cocso chat 을 실행할까요?", True):
         return
 
     from cocso_cli.relaunch import relaunch
@@ -1995,10 +1991,10 @@ def _run_first_time_quick_setup(config: dict, cocso_home, is_existing: bool):
     # Step 3: Offer messaging gateway setup
     print()
     gateway_choice = prompt_choice(
-        "Connect a messaging platform? (Telegram, Discord, etc.)",
+        "메시징 플랫폼을 연결할까요? (Telegram, Discord 등)",
         [
-            "Set up messaging now (recommended)",
-            "Skip — set up later with 'cocso setup gateway'",
+            "지금 메시징 설정 (권장)",
+            "건너뛰기 — 나중에 'cocso setup gateway' 로 설정",
         ],
         0,
     )
@@ -2008,11 +2004,11 @@ def _run_first_time_quick_setup(config: dict, cocso_home, is_existing: bool):
         save_config(config)
 
     print()
-    print_success("Setup complete! You're ready to go.")
+    print_success("셋업 완료! 사용 가능합니다.")
     print()
-    print_info("  Configure all settings:    cocso setup")
+    print_info("  전체 설정:                cocso setup")
     if gateway_choice != 0:
-        print_info("  Connect Telegram/Discord:  cocso setup gateway")
+        print_info("  Telegram/Discord 연결:    cocso setup gateway")
     print()
 
     _print_setup_summary(config, cocso_home)
@@ -2029,7 +2025,7 @@ def _run_quick_setup(config: dict, cocso_home):
     )
 
     print()
-    print_header("Quick Setup — Missing Items Only")
+    print_header("빠른 셋업 — 누락된 항목만")
 
     # Check what's missing
     missing_required = [
@@ -2092,7 +2088,7 @@ def _run_quick_setup(config: dict, cocso_home):
     # ── Tool API keys (checklist) ──
     if missing_tools:
         print()
-        print_header("Tool API Keys")
+        print_header("도구 API 키")
 
         checklist_labels = []
         for var in missing_tools:
@@ -2112,7 +2108,7 @@ def _run_quick_setup(config: dict, cocso_home):
     # ── Messaging platforms (checklist then prompt for selected) ──
     if missing_messaging:
         print()
-        print_header("Messaging Platforms")
+        print_header("메시징 플랫폼")
         print_info("Connect COCSO to messaging apps to chat from anywhere.")
         print_info("You can configure these later with 'cocso setup gateway'.")
 
