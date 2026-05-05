@@ -14,7 +14,7 @@ Features:
 - Support for multiple model providers
 
 Usage:
-    from run_agent import AIAgent
+    from cocso_cli.run_agent import AIAgent
     
     agent = AIAgent(base_url="http://localhost:30000/v1", model="claude-opus-4-20250514")
     response = agent.run_conversation("Tell me about the latest Python updates")
@@ -447,7 +447,7 @@ def _sanitize_surrogates(text: str) -> str:
 
 
 # _summarize_user_message_for_log is imported from agent.codex_responses_adapter
-# (see import block above). Remains importable from run_agent for backward compat.
+# (see import block above). Remains importable from cocso_cli.run_agent for backward compat.
 
 
 def _sanitize_structure_surrogates(payload: Any) -> bool:

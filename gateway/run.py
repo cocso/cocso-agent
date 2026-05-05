@@ -4830,7 +4830,7 @@ class GatewayRunner:
                     _hyg_meta = {"thread_id": source.thread_id} if source.thread_id else None
 
                     try:
-                        from run_agent import AIAgent
+                        from cocso_cli.run_agent import AIAgent
 
                         _hyg_model, _hyg_runtime = self._resolve_session_agent_runtime(
                             source=source,
@@ -6685,7 +6685,7 @@ class GatewayRunner:
         self, prompt: str, source: "SessionSource", task_id: str
     ) -> None:
         """Execute a background agent task and deliver the result to the chat."""
-        from run_agent import AIAgent
+        from cocso_cli.run_agent import AIAgent
 
         adapter = self.adapters.get(source.platform)
         if not adapter:
@@ -7183,7 +7183,7 @@ class GatewayRunner:
         focus_topic = (event.get_command_args() or "").strip() or None
 
         try:
-            from run_agent import AIAgent
+            from cocso_cli.run_agent import AIAgent
             from agent.manual_compression_feedback import summarize_manual_compression
             from agent.model_metadata import estimate_messages_tokens_rough
 
@@ -9771,7 +9771,7 @@ class GatewayRunner:
                 event_message_id=event_message_id,
             )
 
-        from run_agent import AIAgent
+        from cocso_cli.run_agent import AIAgent
         import queue
 
         def _run_still_current() -> bool:

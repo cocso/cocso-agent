@@ -802,7 +802,7 @@ def run_job(job: dict) -> tuple[bool, str, str, Optional[str]]:
     Returns:
         Tuple of (success, full_output_doc, final_response, error_message)
     """
-    from run_agent import AIAgent
+    from cocso_cli.run_agent import AIAgent
     
     # Initialize SQLite session store so cron job messages are persisted
     # and discoverable via session_search (same pattern as gateway/run.py).

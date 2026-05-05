@@ -214,7 +214,7 @@ def _run_agent(
     from cocso_cli.models import detect_provider_for_model
     from cocso_cli.runtime_provider import resolve_runtime_provider
     from cocso_cli.tools_config import _get_platform_tools
-    from run_agent import AIAgent
+    from cocso_cli.run_agent import AIAgent
 
     cfg = load_config()
 

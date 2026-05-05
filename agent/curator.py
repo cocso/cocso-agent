@@ -737,7 +737,7 @@ def _run_llm_review(prompt: str) -> Dict[str, Any]:
         "error": None,
     }
     try:
-        from run_agent import AIAgent
+        from cocso_cli.run_agent import AIAgent
     except Exception as e:
         result_meta["error"] = f"AIAgent import failed: {e}"
         result_meta["summary"] = result_meta["error"]

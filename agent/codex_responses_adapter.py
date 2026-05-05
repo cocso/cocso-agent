@@ -3,7 +3,7 @@
 Pure format-conversion and normalization logic for the OpenAI Responses API
 (used by OpenAI Codex, xAI, GitHub Models, and other Responses-compatible endpoints).
 
-Extracted from run_agent.py to isolate Responses API-specific logic from the
+Extracted from cocso_cli.run_agent.py to isolate Responses API-specific logic from the
 core agent loop. All functions are stateless — they operate on the data passed
 in and return transformed results.
 """

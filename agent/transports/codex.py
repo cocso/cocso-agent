@@ -61,7 +61,7 @@ class ResponsesApiTransport(ProviderTransport):
             _responses_tools,
         )
 
-        from run_agent import DEFAULT_AGENT_IDENTITY
+        from cocso_cli.run_agent import DEFAULT_AGENT_IDENTITY
 
         instructions = params.get("instructions", "")
         payload_messages = messages
