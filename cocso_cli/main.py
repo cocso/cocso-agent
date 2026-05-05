@@ -5715,12 +5715,12 @@ def main():
         "setup",
         help="Interactive setup wizard",
         description=f"Configure {default_branding('agent_name', 'COCSO Agent')} with an interactive wizard. "
-        "Run a specific section: cocso setup model|terminal|gateway|tools|agent",
+        "Run a specific section: cocso setup cocso|model|terminal|gateway|tools|agent",
     )
     setup_parser.add_argument(
         "section",
         nargs="?",
-        choices=["model", "terminal", "gateway", "tools", "agent"],
+        choices=["cocso", "model", "terminal", "gateway", "tools", "agent"],
         default=None,
         help="Run a specific setup section instead of the full wizard",
     )

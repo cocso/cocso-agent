@@ -595,6 +595,49 @@ def _prompt_container_resources(config: dict):
         pass
 
 
+def setup_cocso(config: dict):
+    """Configure COCSO 회사 식별 정보 (회사명, MCP URL, 클라이언트 키).
+
+    세 값 모두 ``~/.cocso/.env`` 에 저장. 비워두면 해당 항목은 미설정.
+    - ``COCSO_COMPANY_NAME``: 사용자 식별로 노출 (SOUL.md / 시스템 프롬프트)
+    - ``COCSO_MCP_URL``: 회사 MCP 서버. 설정 시 ``cocso`` MCP 서버 자동 등록
+    - ``COCSO_CLIENT_KEY``: MCP 호출 시 ``Authorization: Bearer`` 헤더로 전달
+    """
+    print_header("COCSO 회사 식별")
+    print_info("회사 데이터에 접근하려면 아래 3개를 채우세요. 비우면 미설정.")
+    print()
+
+    existing_company = get_env_value("COCSO_COMPANY_NAME") or ""
+    company = prompt("회사명 (COCSO_COMPANY_NAME)", default=existing_company or None)
+    if company:
+        save_env_value("COCSO_COMPANY_NAME", company)
+        print_success(f"회사명 저장: {company}")
+    elif existing_company:
+        print_info(f"회사명 유지: {existing_company}")
+
+    print()
+    existing_url = get_env_value("COCSO_MCP_URL") or ""
+    mcp_url = prompt("회사 MCP 서버 URL (COCSO_MCP_URL)", default=existing_url or None)
+    if mcp_url:
+        save_env_value("COCSO_MCP_URL", mcp_url)
+        print_success(f"MCP URL 저장: {mcp_url}")
+    elif existing_url:
+        print_info(f"MCP URL 유지: {existing_url}")
+
+    print()
+    existing_key = get_env_value("COCSO_CLIENT_KEY") or ""
+    if existing_key:
+        print_info("클라이언트 키: 이미 설정됨 (값은 표시 안 함)")
+        if not prompt_yes_no("재설정?", False):
+            print()
+            return
+    client_key = prompt("클라이언트 키 (COCSO_CLIENT_KEY)", password=True)
+    if client_key:
+        save_env_value("COCSO_CLIENT_KEY", client_key)
+        print_success("클라이언트 키 저장")
+    print()
+
+
 def setup_model_provider(config: dict, *, quick: bool = False):
     """Configure the inference provider and default model.
 
@@ -1721,6 +1764,7 @@ def _gateway_platform_short_label(label: str) -> str:
 # =============================================================================
 
 SETUP_SECTIONS = [
+    ("cocso", "COCSO 회사 식별", setup_cocso),
     ("model", "Model & Provider", setup_model_provider),
     ("terminal", "Terminal Backend", setup_terminal_backend),
     ("gateway", "Messaging Platforms (Gateway)", setup_gateway),
@@ -1734,6 +1778,7 @@ def run_setup_wizard(args):
 
     Supports full, quick, and section-specific setup:
       cocso setup           — full or quick (auto-detected)
+      cocso setup cocso     — 회사 식별 (회사명, MCP URL, 클라이언트 키)
       cocso setup model     — just model/provider
       cocso setup terminal  — just terminal backend
       cocso setup gateway   — just messaging platforms
@@ -1857,8 +1902,8 @@ def run_setup_wizard(args):
         print_info("Running the full wizard — each prompt shows your current value.")
         print_info("Press Enter to keep it, or type a new value to change it.")
         print_info("")
-        print_info("Tip: jump straight to a section with 'cocso setup model|terminal|")
-        print_info("     gateway|tools|agent', or fill only missing items with --quick.")
+        print_info("Tip: jump straight to a section with 'cocso setup cocso|model|")
+        print_info("     terminal|gateway|tools|agent', or fill only missing items with --quick.")
         # Fall through to the "Full Setup — run all sections" block below.
         # --reconfigure is now the default on existing installs; the flag
         # is preserved for backwards compatibility but is a no-op here.
