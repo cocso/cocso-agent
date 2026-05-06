@@ -52,6 +52,7 @@ pty = [
   "pywinpty>=2.0.0,<3; sys_platform == 'win32'",
 ]
 mcp = ["mcp>=1.2.0,<2"]
+acp = ["agent-client-protocol>=0.9.0,<1.0"]
 termux = [
   "python-telegram-bot[webhooks]>=22.6,<23",
   "cocso-agent[cli]",
@@ -63,14 +64,19 @@ all = [
   "cocso-agent[cli]",
   "cocso-agent[pty]",
   "cocso-agent[mcp]",
+  "cocso-agent[acp]",
 ]
 
 [project.scripts]
 cocso = "cocso_cli.main:main"
 cocso-agent = "cocso_cli.run_agent:main"
+cocso-acp = "acp_adapter.entry:main"
+
+[tool.setuptools]
+py-modules = ["batch_runner", "mini_swe_runner", "toolset_distributions"]
 
 [tool.setuptools.packages.find]
-include = ["agent", "agent.*", "tools", "tools.*", "cocso_cli", "cocso_core", "gateway", "gateway.*", "cron"]
+include = ["agent", "agent.*", "tools", "tools.*", "cocso_cli", "cocso_core", "gateway", "gateway.*", "cron", "acp_adapter", "plugins", "plugins.*"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
