@@ -89,12 +89,30 @@ def _interactive_transport_details() -> tuple[Optional[str], Optional[str], List
 # ─── Config Helpers ───────────────────────────────────────────────────────────
 
 def _get_mcp_servers(config: Optional[dict] = None) -> Dict[str, dict]:
-    """Return the ``mcp_servers`` dict from config, or empty dict."""
+    """Return the ``mcp_servers`` dict from config, or empty dict.
+
+    Also auto-injects the ``cocso`` server when ``COCSO_MCP_URL`` env is set
+    (mirrors ``tools/mcp_tool.py:_load_mcp_config``) so admin CLI (``cocso
+    mcp list/remove``) sees the same servers the agent runtime sees.
+    """
     if config is None:
         config = load_config()
     servers = config.get("mcp_servers")
     if not servers or not isinstance(servers, dict):
-        return {}
+        servers = {}
+    else:
+        servers = dict(servers)  # don't mutate caller's config
+
+    # Auto-register the COCSO server from env (only if not already configured)
+    import os
+    cocso_url = os.environ.get("COCSO_MCP_URL", "").strip()
+    if cocso_url and "cocso" not in servers:
+        entry: dict = {"url": cocso_url}
+        client_key = os.environ.get("COCSO_CLIENT_KEY", "").strip()
+        if client_key:
+            entry["headers"] = {"Authorization": f"Bearer {client_key}"}
+        servers["cocso"] = entry
+
     return servers
 
 
