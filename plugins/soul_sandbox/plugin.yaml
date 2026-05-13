@@ -1,0 +1,9 @@
+name: soul_sandbox
+version: 1.0.0
+description: >
+  Block agent writes to protected files (SOUL.md, .env, config.yaml, sessions)
+  and credential leaks via shell. Glob patterns. YAML config with hot reload.
+  Defaults seed to ~/.cocso/sandbox.yaml on first run.
+author: COCSO
+provides_hooks:
+  - pre_tool_call

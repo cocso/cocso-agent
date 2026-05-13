@@ -1,0 +1,16 @@
+name: cocso_audit
+version: 1.0.0
+description: >
+  Compliance audit log + per-session rate limit. Records every user turn,
+  assistant response, and tool call to JSONL under
+  ${COCSO_HOME}/audit/<session>.jsonl. Blocks tool calls when a session
+  exceeds the configured per-minute rate. Read-only observer apart from
+  the rate-limit gate.
+author: COCSO
+provides_hooks:
+  - pre_tool_call
+  - post_tool_call
+  - pre_llm_call
+  - post_llm_call
+  - on_session_start
+  - on_session_end

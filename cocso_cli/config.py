@@ -1100,6 +1100,19 @@ DEFAULT_CONFIG = {
         "seen": {},
     },
 
+    # Plugin allow-list. Bundled plugins ship OFF by default; only names
+    # listed here get loaded. ``soul_sandbox`` is shipped enabled so SOUL.md /
+    # .env / credentials are protected from agent writes out of the box.
+    # Add more with ``cocso plugins enable <name>``.
+    "plugins": {
+        # Bundled plugins shipped on by default for client deployments:
+        #   - soul_sandbox: blocks agent writes to SOUL.md, .env, credentials
+        #   - cocso_audit:  per-session JSONL audit log + tool-call rate limit
+        # Add more with ``cocso plugins enable <name>``.
+        "enabled": ["soul_sandbox", "cocso_audit"],
+        "disabled": [],
+    },
+
     # ``cocso update`` behaviour.
     "updates": {
         # Run a full ``cocso backup``-style zip of COCSO_HOME before every
