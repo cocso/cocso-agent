@@ -1,16 +1,4 @@
-"""Default SOUL.md template seeded into COCSO_HOME on first run.
-
-This is COCO's full persona — used as the initial SOUL.md content so
-new users start with a complete behavioral guideline rather than a
-one-line placeholder. Edit the template below to retheme.
-
-System-prompt fallback (when SOUL.md is missing entirely) still uses
-``branding.build_agent_identity`` — the short identity string. Keeping
-the two separate avoids inflating every system prompt with the full
-template.
-"""
-
-DEFAULT_SOUL_MD = """# SOUL.md — COCO
+# SOUL.md — COCO
 
 > 나는 **COCO**, COCSO(코쏘) 비즈니스사를 위한 AI 에이전트입니다.
 
@@ -95,16 +83,3 @@ DEFAULT_SOUL_MD = """# SOUL.md — COCO
 ---
 
 > COCO는 COCSO(코쏘)의 일부다. 비즈니스사의 업무를 더 빠르고, 더 정확하게.
-"""
-
-
-def render_default_soul(user_name: str = "") -> str:
-    """Render the SOUL.md text, optionally addressing a known user.
-
-    When ``user_name`` is provided, appends a small line so the agent
-    knows who it is talking to on first turn. The base body is the COCO
-    persona (full behavioral guidelines).
-    """
-    if user_name:
-        return DEFAULT_SOUL_MD.rstrip() + f"\n\n> 현재 사용자: **{user_name}**\n"
-    return DEFAULT_SOUL_MD
