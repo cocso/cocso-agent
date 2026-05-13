@@ -1153,6 +1153,35 @@ def run_doctor(args):
             check_warn(f"{_active_memory_provider} check failed", str(_e))
 
     # =========================================================================
+    # COCSO MCP (Client + Service auto-registration status)
+    # =========================================================================
+    print()
+    print(color("◆ COCSO MCP", Colors.CYAN, Colors.BOLD))
+
+    _company = os.environ.get("COCSO_COMPANY_NAME", "").strip()
+    if _company:
+        check_ok(f"Company: {_company}")
+    else:
+        check_info("COCSO_COMPANY_NAME not set (run: cocso setup cocso)")
+
+    for _label, _name, _url_env, _key_env in (
+        ("Client",  "cocso-client",  "COCSO_CLIENT_MCP_URL",  "COCSO_CLIENT_KEY"),
+        ("Service", "cocso-service", "COCSO_SERVICE_MCP_URL", "COCSO_SERVICE_KEY"),
+    ):
+        _url = os.environ.get(_url_env, "").strip()
+        _key = os.environ.get(_key_env, "").strip()
+        if _url and _key:
+            check_ok(f"{_label} MCP ({_name}): URL + auth key configured")
+        elif _url:
+            check_warn(f"{_label} MCP ({_name}): URL set but {_key_env} missing",
+                       "(server will auth as anonymous)")
+        elif _key:
+            check_warn(f"{_label} MCP ({_name}): {_key_env} set but {_url_env} missing",
+                       "(server not registered)")
+        else:
+            check_info(f"{_label} MCP ({_name}): not configured")
+
+    # =========================================================================
     # Profiles
     # =========================================================================
     try:

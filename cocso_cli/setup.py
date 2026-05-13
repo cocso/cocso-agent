@@ -596,47 +596,70 @@ def _prompt_container_resources(config: dict):
 
 
 def setup_cocso(config: dict):
-    """Configure COCSO company identity (name, MCP URL, client key).
+    """Configure COCSO company identity (name, two MCP servers).
 
-    All three values are stored in ``~/.cocso/.env``. Leave empty to skip.
+    All values are stored in ``~/.cocso/.env``. Leave empty to skip.
+
     - ``COCSO_COMPANY_NAME``: surfaced as the user identity (SOUL.md / system prompt)
-    - ``COCSO_MCP_URL``: company MCP server. When set, the ``cocso`` MCP server
-      is auto-registered.
-    - ``COCSO_CLIENT_KEY``: sent as the ``Authorization: Bearer`` header on MCP calls.
+
+    Two MCP server types — each auto-registers with its own URL + auth key:
+
+    - **Client MCP** (`cocso-client`): ``COCSO_CLIENT_MCP_URL`` + ``COCSO_CLIENT_KEY``
+    - **Service MCP** (`cocso-service`): ``COCSO_SERVICE_MCP_URL`` + ``COCSO_SERVICE_KEY``
     """
-    print_header("COCSO Company Identity")
-    print_info("Fill in these 3 values to enable company data access. Leave empty to skip.")
+    print_header("COCSO 회사 식별")
+    print_info("회사 데이터 접근을 활성화하려면 아래 값을 입력하세요. 비워두면 건너뜁니다.")
     print()
 
     existing_company = get_env_value("COCSO_COMPANY_NAME") or ""
-    company = prompt("Company name (COCSO_COMPANY_NAME)", default=existing_company or None)
+    company = prompt(
+        "회사명 (COCSO_COMPANY_NAME)", default=existing_company or None
+    )
     if company:
         save_env_value("COCSO_COMPANY_NAME", company)
-        print_success(f"Company name saved: {company}")
+        print_success(f"회사명 저장됨: {company}")
     elif existing_company:
-        print_info(f"Keeping company name: {existing_company}")
+        print_info(f"기존 회사명 유지: {existing_company}")
 
+    # MCP 두 종류 — 각자 URL + 인증 키 한 쌍
+    _setup_cocso_mcp(
+        label="Client MCP",
+        description="영업·정산 운영용 MCP 서버 (cocso-client)",
+        url_env="COCSO_CLIENT_MCP_URL",
+        key_env="COCSO_CLIENT_KEY",
+    )
+    _setup_cocso_mcp(
+        label="Service MCP",
+        description="외부 서비스 노출용 MCP 서버 (cocso-service)",
+        url_env="COCSO_SERVICE_MCP_URL",
+        key_env="COCSO_SERVICE_KEY",
+    )
+
+
+def _setup_cocso_mcp(*, label: str, description: str, url_env: str, key_env: str):
+    """COCSO MCP 한 종류의 URL + 인증 키 입력. URL 건너뛰면 키도 건너뜀."""
     print()
-    existing_url = get_env_value("COCSO_MCP_URL") or ""
-    mcp_url = prompt("Company MCP server URL (COCSO_MCP_URL)", default=existing_url or None)
-    if mcp_url:
-        save_env_value("COCSO_MCP_URL", mcp_url)
-        print_success(f"MCP URL saved: {mcp_url}")
+    print_info(f"[{label}] {description}")
+    existing_url = get_env_value(url_env) or ""
+    url = prompt(f"{label} URL ({url_env})", default=existing_url or None)
+    if url:
+        save_env_value(url_env, url)
+        print_success(f"{label} URL 저장됨: {url}")
     elif existing_url:
-        print_info(f"Keeping MCP URL: {existing_url}")
+        print_info(f"기존 {label} URL 유지: {existing_url}")
+    else:
+        # URL 없으면 키 묻지 않음
+        return
 
-    print()
-    existing_key = get_env_value("COCSO_CLIENT_KEY") or ""
+    existing_key = get_env_value(key_env) or ""
     if existing_key:
-        print_info("Client key: already set (value hidden)")
-        if not prompt_yes_no("Reconfigure?", False):
-            print()
+        print_info(f"{label} 인증 키: 이미 설정됨 (값 숨김)")
+        if not prompt_yes_no("다시 설정하시겠습니까?", False):
             return
-    client_key = prompt("Client key (COCSO_CLIENT_KEY)", password=True)
-    if client_key:
-        save_env_value("COCSO_CLIENT_KEY", client_key)
-        print_success("Client key saved")
-    print()
+    key = prompt(f"{label} 인증 키 ({key_env})", password=True)
+    if key:
+        save_env_value(key_env, key)
+        print_success(f"{label} 인증 키 저장됨")
 
 
 def setup_model_provider(config: dict, *, quick: bool = False):

@@ -91,9 +91,11 @@ def _interactive_transport_details() -> tuple[Optional[str], Optional[str], List
 def _get_mcp_servers(config: Optional[dict] = None) -> Dict[str, dict]:
     """Return the ``mcp_servers`` dict from config, or empty dict.
 
-    Also auto-injects the ``cocso`` server when ``COCSO_MCP_URL`` env is set
-    (mirrors ``tools/mcp_tool.py:_load_mcp_config``) so admin CLI (``cocso
-    mcp list/remove``) sees the same servers the agent runtime sees.
+    Also auto-injects ``cocso-client`` / ``cocso-service`` servers when
+    ``COCSO_CLIENT_MCP_URL`` / ``COCSO_SERVICE_MCP_URL`` env vars are
+    set (mirrors ``tools/mcp_tool.py:_load_mcp_config``) so admin CLI
+    (``cocso mcp list/remove``) sees the same servers the agent runtime
+    sees.
     """
     if config is None:
         config = load_config()
@@ -103,15 +105,21 @@ def _get_mcp_servers(config: Optional[dict] = None) -> Dict[str, dict]:
     else:
         servers = dict(servers)  # don't mutate caller's config
 
-    # Auto-register the COCSO server from env (only if not already configured)
+    # Auto-register the COCSO servers (CLIENT + SERVICE) from env.
+    # Each has its own URL + auth key. User-defined entries in
+    # config.yaml take precedence (no overwrite).
     import os
-    cocso_url = os.environ.get("COCSO_MCP_URL", "").strip()
-    if cocso_url and "cocso" not in servers:
-        entry: dict = {"url": cocso_url}
-        client_key = os.environ.get("COCSO_CLIENT_KEY", "").strip()
-        if client_key:
-            entry["headers"] = {"Authorization": f"Bearer {client_key}"}
-        servers["cocso"] = entry
+    for name, url_env, key_env in (
+        ("cocso-client",  "COCSO_CLIENT_MCP_URL",  "COCSO_CLIENT_KEY"),
+        ("cocso-service", "COCSO_SERVICE_MCP_URL", "COCSO_SERVICE_KEY"),
+    ):
+        url = os.environ.get(url_env, "").strip()
+        if url and name not in servers:
+            entry: dict = {"url": url}
+            key = os.environ.get(key_env, "").strip()
+            if key:
+                entry["headers"] = {"Authorization": f"Bearer {key}"}
+            servers[name] = entry
 
     return servers
 

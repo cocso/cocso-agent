@@ -1925,10 +1925,12 @@ def _load_mcp_config() -> Dict[str, dict]:
     ``${ENV_VAR}`` placeholders in string values are resolved from
     ``os.environ`` (which includes ``~/.cocso/.env`` loaded at startup).
 
-    Auto-registration: when ``COCSO_MCP_URL`` is set, a ``cocso`` server is
-    injected automatically so client deployments don't need to edit
-    ``config.yaml``. ``COCSO_CLIENT_KEY`` (if set) is sent as the
-    ``Authorization: Bearer <key>`` header.
+    Auto-registration: when ``COCSO_CLIENT_MCP_URL`` /
+    ``COCSO_SERVICE_MCP_URL`` is set, ``cocso-client`` / ``cocso-service``
+    servers are injected automatically so deployments don't need to edit
+    ``config.yaml``. Each MCP type uses its own auth key
+    (``COCSO_CLIENT_KEY`` / ``COCSO_SERVICE_KEY``) sent as
+    ``Authorization: Bearer <key>``.
     """
     # Ensure .env vars are available
     try:
@@ -1945,15 +1947,20 @@ def _load_mcp_config() -> Dict[str, dict]:
             servers = {}
         servers = {name: _interpolate_env_vars(cfg) for name, cfg in servers.items()}
 
-        # Auto-register the COCSO server from env vars (only if user didn't
-        # already define one named "cocso" in config.yaml).
-        cocso_url = os.environ.get("COCSO_MCP_URL", "").strip()
-        if cocso_url and "cocso" not in servers:
-            entry: dict = {"url": cocso_url}
-            client_key = os.environ.get("COCSO_CLIENT_KEY", "").strip()
-            if client_key:
-                entry["headers"] = {"Authorization": f"Bearer {client_key}"}
-            servers["cocso"] = entry
+        # Auto-register the COCSO servers (CLIENT + SERVICE) from env vars.
+        # Each has its own URL + auth key. User-defined entries in
+        # config.yaml take precedence (no overwrite).
+        for name, url_env, key_env in (
+            ("cocso-client",  "COCSO_CLIENT_MCP_URL",  "COCSO_CLIENT_KEY"),
+            ("cocso-service", "COCSO_SERVICE_MCP_URL", "COCSO_SERVICE_KEY"),
+        ):
+            url = os.environ.get(url_env, "").strip()
+            if url and name not in servers:
+                entry: dict = {"url": url}
+                key = os.environ.get(key_env, "").strip()
+                if key:
+                    entry["headers"] = {"Authorization": f"Bearer {key}"}
+                servers[name] = entry
 
         return servers
     except Exception as exc:

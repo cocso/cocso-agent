@@ -37,6 +37,14 @@ RESTART_REQUIRED_ENV: Set[str] = {
     "TELEGRAM_ALLOWED_USERS",
     "SLACK_ALLOWED_USERS",
     "COCSO_GATEWAY_PORT",
+    # COCSO company identity — affects MCP auto-registration and user
+    # identity injection. MCP clients connect at startup, so any URL/key
+    # change requires a restart to take effect on the running gateway.
+    "COCSO_COMPANY_NAME",
+    "COCSO_CLIENT_MCP_URL",
+    "COCSO_CLIENT_KEY",
+    "COCSO_SERVICE_MCP_URL",
+    "COCSO_SERVICE_KEY",
 }
 
 RESTART_REQUIRED_CONFIG_TOP_KEYS: Set[str] = {
