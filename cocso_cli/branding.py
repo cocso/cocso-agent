@@ -88,11 +88,11 @@ BRAND_EMOJI = "🅲"
 
 DEFAULT_BRANDING = {
     "brand_emoji": BRAND_EMOJI,
-    "agent_name": "COCSO Agent",
-    "agent_short_name": "COCSO",
-    "welcome": "Welcome to COCSO Agent! Type your message or /help for commands.",
+    "agent_name": "COCO",
+    "agent_short_name": "COCO",
+    "welcome": "COCO가 준비되었습니다. 메시지를 입력하거나 /help 로 명령 목록을 확인하세요.",
     "goodbye": f"Goodbye! {BRAND_EMOJI}",
-    "response_label": f" {BRAND_EMOJI} COCSO ",
+    "response_label": f" {BRAND_EMOJI} COCO ",
     "prompt_symbol": "❯",
     "help_header": "(^_^)? Available Commands",
 }
@@ -128,9 +128,11 @@ def build_agent_identity(user_name: str = "") -> str:
     When ``user_name`` is provided, appends a single line so the agent
     knows who it is talking to.
     """
-    agent = DEFAULT_BRANDING.get("agent_name", "COCSO Agent")
+    agent = DEFAULT_BRANDING.get("agent_name", "COCO")
     body = (
-        f"당신은 **{agent}** — COCSO(코쏘) 비즈니스사 사용자를 돕는 AI 에이전트입니다. "
+        f"당신의 이름은 **{agent}** 입니다. \"COCSO Agent\" / \"AI 어시스턴트\" 같은 "
+        "다른 이름으로 자신을 소개하지 않습니다. 이름을 물어보면 \"COCO입니다\"로 시작합니다. "
+        "COCSO(코쏘) 비즈니스사 사용자를 돕는 AI 에이전트입니다. "
         "정확하고 간결하게, 추측 대신 사실을 우선해 응답합니다. "
         "모호한 요청은 추측하지 않고 되묻고, 도구 호출 전 무엇을 할지 한 줄로 알립니다. "
         "사용자가 속한 비즈니스사 권한 범위 안에서만 응답하며, "
