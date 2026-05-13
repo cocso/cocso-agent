@@ -1164,6 +1164,16 @@ def run_doctor(args):
     else:
         check_info("COCSO_COMPANY_NAME not set (run: cocso setup cocso)")
 
+    # MCP Python SDK 가용성 — 미설치면 MCP tool 자동 등록 안 됨.
+    try:
+        import mcp  # noqa: F401
+        check_ok("mcp Python SDK 설치됨")
+    except ImportError:
+        check_fail(
+            "mcp Python SDK 미설치",
+            "MCP 서버 등록돼도 tool 노출 안 됨. 설치: pip install 'mcp>=1.2.0,<2'"
+        )
+
     for _label, _name, _url_env, _key_env in (
         ("Client",  "cocso-client",  "COCSO_CLIENT_MCP_URL",  "COCSO_CLIENT_KEY"),
         ("Service", "cocso-service", "COCSO_SERVICE_MCP_URL", "COCSO_SERVICE_KEY"),

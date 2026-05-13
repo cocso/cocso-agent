@@ -30,6 +30,9 @@ dependencies = [
   "croniter>=6.0.0,<7",
   # Skills Hub (GitHub App JWT auth — optional, only needed for bot identity)
   "PyJWT[crypto]>=2.12.0,<3",  # CVE-2026-32597
+  # MCP — core protocol for connecting to Client/Service MCP servers.
+  # Promoted from optional extra because cocso의 회사 데이터 접근 통로 자체.
+  "mcp>=1.2.0,<2",
 ]
 
 [project.urls]
@@ -51,19 +54,16 @@ pty = [
   "ptyprocess>=0.7.0,<1; sys_platform != 'win32'",
   "pywinpty>=2.0.0,<3; sys_platform == 'win32'",
 ]
-mcp = ["mcp>=1.2.0,<2"]
 acp = ["agent-client-protocol>=0.9.0,<1.0"]
 termux = [
   "python-telegram-bot[webhooks]>=22.6,<23",
   "cocso-agent[cli]",
   "cocso-agent[pty]",
-  "cocso-agent[mcp]",
 ]
 all = [
   "cocso-agent[messaging]",
   "cocso-agent[cli]",
   "cocso-agent[pty]",
-  "cocso-agent[mcp]",
   "cocso-agent[acp]",
 ]
 

@@ -622,22 +622,31 @@ def setup_cocso(config: dict):
         print_info(f"기존 회사명 유지: {existing_company}")
 
     # MCP 두 종류 — 각자 URL + 인증 키 한 쌍
-    _setup_cocso_mcp(
+    client_set = _setup_cocso_mcp(
         label="Client MCP",
         description="영업·정산 운영용 MCP 서버 (cocso-client)",
         url_env="COCSO_CLIENT_MCP_URL",
         key_env="COCSO_CLIENT_KEY",
     )
-    _setup_cocso_mcp(
+    service_set = _setup_cocso_mcp(
         label="Service MCP",
         description="외부 서비스 노출용 MCP 서버 (cocso-service)",
         url_env="COCSO_SERVICE_MCP_URL",
         key_env="COCSO_SERVICE_KEY",
     )
 
+    # MCP URL이 하나라도 설정됐으면 mcp Python SDK 가용성 확인.
+    # 미설치면 pip로 자동 설치 (사용자 동의 후) — 안 깔리면 MCP tool 등록 0개.
+    if client_set or service_set:
+        _ensure_mcp_sdk_installed()
 
-def _setup_cocso_mcp(*, label: str, description: str, url_env: str, key_env: str):
-    """COCSO MCP 한 종류의 URL + 인증 키 입력. URL 건너뛰면 키도 건너뜀."""
+
+def _setup_cocso_mcp(*, label: str, description: str, url_env: str, key_env: str) -> bool:
+    """COCSO MCP 한 종류의 URL + 인증 키 입력.
+
+    URL 건너뛰면 키도 건너뜀. URL이 새로 저장되거나 기존 값 유지면
+    True 반환 — 호출자가 MCP SDK 가용성 검증을 트리거할 수 있도록.
+    """
     print()
     print_info(f"[{label}] {description}")
     existing_url = get_env_value(url_env) or ""
@@ -649,17 +658,57 @@ def _setup_cocso_mcp(*, label: str, description: str, url_env: str, key_env: str
         print_info(f"기존 {label} URL 유지: {existing_url}")
     else:
         # URL 없으면 키 묻지 않음
-        return
+        return False
 
     existing_key = get_env_value(key_env) or ""
     if existing_key:
         print_info(f"{label} 인증 키: 이미 설정됨 (값 숨김)")
         if not prompt_yes_no("다시 설정하시겠습니까?", False):
-            return
+            return True
     key = prompt(f"{label} 인증 키 ({key_env})", password=True)
     if key:
         save_env_value(key_env, key)
         print_success(f"{label} 인증 키 저장됨")
+    return True
+
+
+def _ensure_mcp_sdk_installed():
+    """``mcp`` Python SDK 가용성 확인. 미설치면 pip로 자동 설치.
+
+    cocso 0.1.5 부터 ``mcp`` 가 core dependency이지만 0.1.4 이하에서
+    업그레이드한 사용자나 부분 설치된 환경에서는 누락될 수 있음.
+    이 경우 MCP 서버 자동 등록이 조용히 실패해 agent가 MCP tool을
+    못 봄. setup 마지막 단계에서 한 번 더 확인해 보호.
+    """
+    print()
+    try:
+        import mcp  # noqa: F401
+        print_success("MCP SDK 설치됨 — 등록된 MCP 서버의 tool들이 자동 노출됩니다.")
+        return
+    except ImportError:
+        pass
+
+    print_info(
+        "MCP Python SDK (`mcp` 패키지)가 설치되지 않았습니다. "
+        "이게 없으면 cocso-client / cocso-service MCP 서버에 연결돼도 "
+        "agent tool 목록에 등록되지 않습니다."
+    )
+    if not prompt_yes_no("지금 `pip install 'mcp>=1.2.0,<2'` 자동 실행할까요?", True):
+        print_info("건너뜁니다. 나중에 수동 설치: pip install 'mcp>=1.2.0,<2'")
+        return
+
+    import subprocess
+    import sys
+    try:
+        subprocess.check_call(
+            [sys.executable, "-m", "pip", "install", "mcp>=1.2.0,<2"],
+        )
+        print_success("MCP SDK 설치 완료. cocso 재시작 후 MCP tool 사용 가능합니다.")
+    except subprocess.CalledProcessError as exc:
+        print_info(
+            f"설치 실패 (exit {exc.returncode}). "
+            "수동 설치: pip install 'mcp>=1.2.0,<2'"
+        )
 
 
 def setup_model_provider(config: dict, *, quick: bool = False):
