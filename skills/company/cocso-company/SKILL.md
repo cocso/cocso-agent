@@ -1,6 +1,6 @@
 ---
 name: cocso-company
-description: "COCSO 회사 개요 — 무엇을 하는 회사인지, 어떤 플랫폼인지, 비즈니스사가 무엇을 위해 도입하는지. 사용자가 'COCSO가 뭐야' / '코쏘 회사 설명' / '플랫폼 구조' 같은 질문을 할 때 로드."
+description: "COCSO 회사 개요 — 무엇을 하는 회사인지, 어떤 플랫폼인지, 비즈니스사가 무엇을 위해 도입하는지. 사용자가 'COCSO가 뭐야' / '코쏘 회사 설명' / '플랫폼 구조' 질문 시, 그리고 **의료·의약품·제약·약국·병원 관련 도메인 질문** 시에도 로드 (COCSO 가 의약품 유통·정산·계약 B2B 플랫폼이므로)."
 version: 1.0.0
 metadata:
   cocso:
@@ -95,6 +95,57 @@ COCO는 COCSO의 일부로 작동하며, 비즈니스사가 다음 일을 자연
 
 ---
 
+## COCSO MCP
+
+COCSO는 두 종류의 MCP 서버를 제공합니다. COCO는 환경 변수만 채워두면 두 서버에 자동으로 연결됩니다.
+
+### 두 MCP 비교
+
+| 항목 | Client MCP | Service MCP |
+|---|---|---|
+| 서버 이름 | `cocso-client` | `cocso-service` |
+| 대상 영역 | **Client 서버** (영업·정산 운영) | **Service 서버** (외부 노출 API) |
+| 주 용도 | 비즈니스사 일상 영업 — 딜러·거래처·수수료·정산 그룹 | 자격(eligibility) 조회, 제안(proposal), 재위임 통지, MCP API 키 관리 |
+| 누가 사용 | 비즈니스사 사용자 (CSO 운영) | 외부 시스템 / 자동화 워크플로우 |
+| 인증 헤더 | `Authorization: Bearer ${COCSO_CLIENT_KEY}` | `Authorization: Bearer ${COCSO_SERVICE_KEY}` |
+| 환경 변수 | `COCSO_CLIENT_MCP_URL` + `COCSO_CLIENT_KEY` | `COCSO_SERVICE_MCP_URL` + `COCSO_SERVICE_KEY` |
+
+비즈니스사 사용자가 일상에서 쓰는 건 대부분 **Client MCP**. Service MCP는 외부 시스템 연동·자동화 시나리오용이라 직접 호출은 드뭅니다.
+
+### 자동 등록 동작
+
+COCO는 `.env` 또는 환경에 위 변수 한 쌍이 있으면 별도 `config.yaml` 편집 없이 자동으로 해당 MCP 서버를 등록합니다.
+
+| URL | KEY | 결과 |
+|---|---|---|
+| 있음 | 있음 | 정상 등록 + 인증 헤더 부착 |
+| 있음 | 없음 | URL만 등록 (anonymous — 서버 측 거부 가능) |
+| 없음 | 있음 | 등록 안 됨 (URL 필요) |
+| 없음 | 없음 | 등록 안 됨 |
+
+각 MCP는 **독립적으로** 설정 가능 — Client만 설정하고 Service 비워둬도 OK, 반대도 OK.
+
+### COCO가 MCP를 쓰는 방식
+
+1. 사용자 요청 분석 → 어느 MCP의 어느 tool을 부를지 판단
+2. tool 호출 전 한 줄로 알림: "Client MCP에서 ○○ 조회합니다."
+3. 결과 받아 **요약 + 근거 위치** 형태로 응답
+4. 권한 밖 요청 (다른 회사 데이터, Admin 영역 등) 은 거절
+
+> Admin / Settler / Webhook 같은 다른 서버 영역은 별도 MCP가 노출되지 않습니다. COCO는 Client + Service 두 MCP의 도구만 사용합니다.
+
+### 셋업 / 진단
+
+| 명령 | 용도 |
+|---|---|
+| `cocso setup` | 회사명 + 두 MCP URL/KEY 인터랙티브 입력 |
+| `cocso mcp list` | 현재 등록된 MCP 서버 + 인증 헤더 상태 확인 |
+| `cocso doctor` | "◆ COCSO MCP" 섹션에서 두 MCP 등록 / 인증 상태 자동 검증 |
+
+설정 변경 시 gateway 자동 재시작 — 사용자가 수동으로 재시작할 필요 없음.
+
+---
+
 ## 응답 가이드
 
 사용자가 회사·플랫폼에 대해 물을 때:
@@ -106,5 +157,7 @@ COCO는 COCSO의 일부로 작동하며, 비즈니스사가 다음 일을 자연
 | "Client / Contract가 뭐야?" | 플랫폼 구조 > 서버 표 |
 | "수수료 어떻게 계산돼?" | 워커 > Commission |
 | "계약은 어떻게 진행돼?" | 계약 워커 섹션 |
+| "MCP가 뭐야?" / "어떤 MCP 있어?" | "COCSO MCP" 섹션 두 MCP 비교 표 |
+| "MCP 설정 어떻게?" | "COCSO MCP > 셋업 / 진단" 표 |
 
 전체를 한 번에 쏟지 말고, 사용자가 묻는 영역만 짧게 답합니다. 더 알고 싶어 하면 그때 다음 섹션을 펼칩니다.
