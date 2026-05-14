@@ -104,6 +104,31 @@ cocso-service   https://service.your-company.com/mcp   Bearer ✓
 
 ---
 
+## 기본 탑재 도구 (cocso_plugin)
+
+설치하면 자동 활성화되는 통합 plugin. 4 sub-module:
+
+### 🛡️ Sandbox — 보호 파일 차단
+SOUL.md / .env / config.yaml / 자격증명 등 보호 파일 수정 시도 자동 차단. 보호 목록 조회: `/sandbox list`. 수정: `~/.cocso/sandbox.yaml`
+
+### 📊 Audit — 컴플라이언스 로그
+모든 user/assistant turn + tool 호출을 `~/.cocso/audit/<session>.jsonl` 로 기록. 자격증명-shape 인자는 자동 redact. 세션별 sliding-window rate limit (기본 60회/60초). `/audit stats` / `/audit tail 20`
+
+### 📁 Excel — generic .xlsx 도구
+파일 열기/시트 읽기/셀 쓰기/범위 batch 쓰기/시트 추가/다른 이름 저장 — 6 tools. 임의 엑셀 파일 다룰 때 사용.
+
+### 💼 Settlement — 정산서 변환·생성 (도메인)
+**다른 회사 양식 엑셀을 COCSO 표준 의약품 정산 수수료 내역서로 변환**. 컬럼 자동 매핑 + 사용자 확인 + 통계 영역 자동 집계.
+
+데모용 샘플 입력: `excel/samples/거래처_원본_2026-05.xlsx` (8행, 다른 양식). 사용 흐름 + 매핑 표는 `excel/samples/README.md` 참고.
+
+```
+사용자: "5월 정산서 변환해줘. 입력 = excel/samples/거래처_원본_2026-05.xlsx"
+COCO: 헤더 분석 → 매핑 표 제시 → 확인 후 변환 → 출력 경로 알림
+```
+
+---
+
 ## 보안 권장 사항 (배포용)
 
 `soul_sandbox` plugin은 에이전트가 보호 파일을 **수정·삭제**하는 걸 SW level에서 차단합니다. 다른 프로세스 / 침해 시나리오까지 막으려면 OS level 추가 보호 권장.

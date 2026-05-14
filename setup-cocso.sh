@@ -52,7 +52,7 @@ get_command_link_display_dir() {
 }
 
 echo ""
-echo -e "${CYAN}🪽 COCSO Agent Setup${NC}"
+echo -e "${CYAN}🅒 COCSO Agent Setup${NC}"
 echo ""
 
 # ============================================================================

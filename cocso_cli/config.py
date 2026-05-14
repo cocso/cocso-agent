@@ -1105,12 +1105,13 @@ DEFAULT_CONFIG = {
     # .env / credentials are protected from agent writes out of the box.
     # Add more with ``cocso plugins enable <name>``.
     "plugins": {
-        # Bundled plugins shipped on by default for client deployments:
-        #   - soul_sandbox: blocks agent writes to SOUL.md, .env, credentials
-        #   - cocso_audit:  per-session JSONL audit log + tool-call rate limit
-        #   - cocso_excel:  Excel (.xlsx) 6 tools (open / read / write / add_sheet / save_as)
-        # Add more with ``cocso plugins enable <name>``.
-        "enabled": ["soul_sandbox", "cocso_audit", "cocso_excel"],
+        # Single bundled plugin shipped on by default for client deployments.
+        # ``cocso_plugin`` 안에 4 sub-module 통합:
+        #   - sandbox    : SOUL/.env/credential 보호
+        #   - audit      : 세션 JSONL 로그 + rate limit
+        #   - excel      : .xlsx 6 generic tools
+        #   - settlement : COCSO 표준 정산 내역서 변환·생성 + bundled SKILL
+        "enabled": ["cocso_plugin"],
         "disabled": [],
     },
 

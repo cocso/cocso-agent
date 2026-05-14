@@ -1,0 +1,24 @@
+name: cocso_plugin
+version: 1.0.0
+description: >
+  COCSO 운영 + 도메인 통합 plugin. 4 sub-module 한 묶음:
+  sandbox (SOUL/.env/credential 보호), audit (세션 JSONL 로그 +
+  rate limit), excel (.xlsx 6 generic tools), settlement (COCSO 표준
+  의약품 정산 수수료 내역서 변환·생성 + bundled SKILL).
+author: COCSO
+provides_tools:
+  - excel_open
+  - excel_read_range
+  - excel_write_cell
+  - excel_write_range
+  - excel_add_sheet
+  - excel_save_as
+  - cocso_settlement_create
+  - cocso_settlement_template_info
+provides_hooks:
+  - pre_tool_call
+  - post_tool_call
+  - pre_llm_call
+  - post_llm_call
+  - on_session_start
+  - on_session_end

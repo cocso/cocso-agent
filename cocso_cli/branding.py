@@ -84,7 +84,7 @@ def default_color(key: str, fallback: str = "") -> str:
 # ``skin_engine.py``.
 # =========================================================================
 
-BRAND_EMOJI = "🅲"
+BRAND_EMOJI = "🅒 "
 
 DEFAULT_BRANDING = {
     "brand_emoji": BRAND_EMOJI,

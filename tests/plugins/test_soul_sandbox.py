@@ -18,7 +18,7 @@ from pathlib import Path
 import pytest
 
 PROJECT_ROOT = Path(__file__).resolve().parent.parent.parent
-PLUGIN_PATH = PROJECT_ROOT / "plugins" / "soul_sandbox" / "__init__.py"
+PLUGIN_PATH = PROJECT_ROOT / "plugins" / "cocso_plugin" / "sandbox.py"
 
 
 @pytest.fixture

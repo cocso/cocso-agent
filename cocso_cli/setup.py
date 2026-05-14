@@ -1932,7 +1932,7 @@ def run_setup_wizard(args):
     )
     print(
         color(
-            "│               COCSO Agent Setup Wizard                │", Colors.MAGENTA
+            "│               COCSO Agent Setup Wizard                  │", Colors.MAGENTA
         )
     )
     print(
@@ -1943,12 +1943,12 @@ def run_setup_wizard(args):
     )
     print(
         color(
-            "│  Let's configure your COCSO Agent installation.       │", Colors.MAGENTA
+            "│  Let's configure your COCSO Agent installation.         │", Colors.MAGENTA
         )
     )
     print(
         color(
-            "│  Press Ctrl+C at any time to exit.                     │", Colors.MAGENTA
+            "│  Press Ctrl+C at any time to exit.                      │", Colors.MAGENTA
         )
     )
     print(

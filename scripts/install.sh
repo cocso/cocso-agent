@@ -126,7 +126,7 @@ print_banner() {
     echo ""
     echo -e "${MAGENTA}${BOLD}"
     echo "┌─────────────────────────────────────────────────────────┐"
-    echo "│             🪽 COCSO Agent Installer                    │"
+    echo "│             🅒 COCSO Agent Installer                    │"
     echo "├─────────────────────────────────────────────────────────┤"
     echo "│  COCSO Agent.                                              │"
     echo "└─────────────────────────────────────────────────────────┘"
