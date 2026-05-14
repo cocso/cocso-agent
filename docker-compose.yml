@@ -18,7 +18,7 @@
 services:
   gateway:
     build: .
-    image: cocso-agent:0.1.0
+    image: cocso-agent:0.1.4
     container_name: cocso
     restart: unless-stopped
     network_mode: host
@@ -27,6 +27,37 @@ services:
     environment:
       - COCSO_UID=${COCSO_UID:-10000}
       - COCSO_GID=${COCSO_GID:-10000}
+      # ──────────────────────────────────────────────────────────────
+      # COCSO 회사 식별 + MCP (Client / Service)
+      # ──────────────────────────────────────────────────────────────
+      # Host 쉘 또는 .env 파일에 값을 export 해두면 그대로 컨테이너로
+      # 전달됨. 비워두면 빈 문자열 — cocso는 빈 값을 미설정으로 취급해
+      # 해당 MCP 서버를 자동 등록하지 않음.
+      #
+      # 우선순위:
+      #   1) 이 environment 블록의 값
+      #   2) bind-mount된 ~/.cocso/.env
+      # — compose env가 더 강함. CI/CD에서 일시 오버라이드 하기 좋음.
+      - COCSO_COMPANY_NAME=${COCSO_COMPANY_NAME:-}
+      - COCSO_CLIENT_MCP_URL=${COCSO_CLIENT_MCP_URL:-}
+      - COCSO_CLIENT_KEY=${COCSO_CLIENT_KEY:-}
+      - COCSO_SERVICE_MCP_URL=${COCSO_SERVICE_MCP_URL:-}
+      - COCSO_SERVICE_KEY=${COCSO_SERVICE_KEY:-}
+      # ──────────────────────────────────────────────────────────────
+      # 모델 provider API 키 (LLM 추론용)
+      # ──────────────────────────────────────────────────────────────
+      # 사용하는 provider 만 호스트에 export 하면 됨. 비워두면 빈 값.
+      # `cocso setup` / `cocso model` 로 활성 provider 선택.
+      - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY:-}
+      - OPENAI_API_KEY=${OPENAI_API_KEY:-}
+      - OPENAI_BASE_URL=${OPENAI_BASE_URL:-}
+      - OPENROUTER_API_KEY=${OPENROUTER_API_KEY:-}
+      - OPENROUTER_BASE_URL=${OPENROUTER_BASE_URL:-}
+      - XIAOMI_API_KEY=${XIAOMI_API_KEY:-}
+      - XIAOMI_BASE_URL=${XIAOMI_BASE_URL:-}
+      - LM_API_KEY=${LM_API_KEY:-}
+      - LM_BASE_URL=${LM_BASE_URL:-}
+      # ──────────────────────────────────────────────────────────────
       # Optional: expose the OpenAI-compatible API server beyond localhost.
       # Uncomment BOTH lines (API_SERVER_KEY is mandatory for non-loopback).
       # - API_SERVER_HOST=0.0.0.0

@@ -15,7 +15,30 @@ node_modules
 # Environment files
 .env
 
-*.md
+# Python bytecode / build artifacts
+**/__pycache__
+**/*.pyc
+**/*.pyo
+**/.pytest_cache
+*.egg-info
+build
+dist
+
+# Tests — production image doesn't need them
+tests
+**/tests
+
+# Hermes upstream reference (60MB+) — only used during dev for parity audit
+ref
 
 # Runtime data (bind-mounted at /opt/data; must not leak into build context)
 data/
+
+# Docs at repo root that don't need to ship in the container.
+# IMPORTANT: do NOT use ``*.md`` here — it would also exclude SKILL.md /
+# SOUL.md, which are loaded at runtime by the skill system + persona
+# seed. Only ignore specific docs by name.
+RELEASE_*.md
+CONTRIBUTING.md
+COCSO_VS_HERMES.md
+PLUGIN_CAPABILITIES.md
