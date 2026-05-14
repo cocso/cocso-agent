@@ -264,7 +264,7 @@ class TestStatisticsRegionIntact:
 
 
 class TestRegister:
-    def test_register_attaches_two_tools(self, settlement):
+    def test_register_attaches_three_tools(self, settlement):
         mod, _ = settlement
 
         class FakeCtx:
@@ -279,4 +279,5 @@ class TestRegister:
         assert set(ctx.tools) == {
             "cocso_settlement_create",
             "cocso_settlement_template_info",
+            "cocso_settlement_validate",
         }

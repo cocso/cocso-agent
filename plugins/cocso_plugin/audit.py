@@ -47,9 +47,11 @@ DEFAULT_CONFIG: Dict[str, Any] = {
     # scannable and avoids leaking long prompt content.
     "max_text_chars": 500,
     # Per-session sliding-window rate limit on tool calls.
-    # Set ``max_tool_calls = 0`` to disable rate limiting entirely.
+    # 정산서 변환 1건 = sniff + read + 보강 5~10 + create = ~15 호출.
+    # 사용자가 연속 2~3건 처리하는 흔한 시나리오 + post_tool_call 자기
+    # 자신도 카운트되므로 충분한 여유 필요. 0 = 비활성.
     "rate_limit": {
-        "max_tool_calls": 60,        # within window_seconds
+        "max_tool_calls": 300,       # within window_seconds
         "window_seconds": 60,
     },
     # Drop these tool args from the log record (sensitive).

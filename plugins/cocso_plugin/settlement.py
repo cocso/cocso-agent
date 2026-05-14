@@ -22,6 +22,7 @@ from __future__ import annotations
 import json
 import logging
 import os
+import re
 import shutil
 from pathlib import Path
 from typing import Any, Dict, List, Optional
@@ -315,6 +316,158 @@ INFO_SCHEMA = {
 
 
 # ---------------------------------------------------------------------------
+# Tool: cocso_settlement_validate
+# ---------------------------------------------------------------------------
+
+def cocso_settlement_validate(args: Dict[str, Any], **_kw) -> str:
+    """Items 배열을 cocso_settlement_create 호출 전에 검증.
+
+    감지 항목 (각 항목 row 단위):
+      - 처방금액 ≠ 단가 × 수량 (오차 1원 이내 허용)
+      - 정산금액 < 처방금액 (보통 정산 = 처방 + VAT 인데 작으면 의심)
+      - 핵심 컬럼 빠짐 (정산코드 / 처방 병원명 / 제품명 / 단가 / 수량)
+      - 사업자번호 형식 (3-2-5 자리 또는 10자리)
+      - 음수 / 0 단가·수량
+      - 같은 (정산코드, 제품명) 중복 row
+
+    응답: ``{ok, item_count, errors[], warnings[], summary}``.
+    errors > 0 이면 cocso_settlement_create 호출 전 사용자 확인 필수.
+    """
+    if (e := _check_sdk()) is not None:
+        return e
+    items = args.get("items") or []
+    if not isinstance(items, list):
+        return _err("items must be a list of objects")
+
+    errors: List[Dict[str, Any]] = []
+    warnings: List[Dict[str, Any]] = []
+    seen_keys: Dict[tuple, int] = {}
+    biz_pattern = re.compile(r"^\d{3}-?\d{2}-?\d{5}$")
+    total_amount = 0.0
+    total_settlement = 0.0
+
+    for idx, item in enumerate(items):
+        if not isinstance(item, dict):
+            errors.append({"row": idx + 1, "field": "_root",
+                           "msg": "item is not a dict"})
+            continue
+
+        # Helper: pull value by korean OR snake key
+        def _get(*keys):
+            for k in keys:
+                if k in item and item[k] not in (None, ""):
+                    return item[k]
+            return None
+
+        code = _get("정산코드", "settlement_code")
+        hospital = _get("처방 병원명", "hospital_name")
+        product = _get("제품명", "product_name")
+        biz_id = _get("처방 병원 사업자번호", "hospital_biz_id")
+        unit = _get("단가(원)", "unit_price")
+        qty = _get("수량", "quantity")
+        prescription = _get("처방금액(원)", "prescription_amount")
+        settlement = _get("정산금액(원, VAT 포함)", "settlement_amount")
+
+        # 핵심 컬럼 누락
+        for label, val in (("정산코드", code), ("처방 병원명", hospital),
+                           ("제품명", product), ("단가", unit), ("수량", qty)):
+            if val in (None, ""):
+                errors.append({"row": idx + 1, "field": label,
+                               "msg": f"{label} 값 비어있음"})
+
+        # 숫자 변환
+        unit_n = _coerce_number(unit) if unit is not None else None
+        qty_n = _coerce_number(qty) if qty is not None else None
+        pres_n = _coerce_number(prescription) if prescription is not None else None
+        sett_n = _coerce_number(settlement) if settlement is not None else None
+
+        # 처방금액 ≠ 단가 × 수량
+        if isinstance(unit_n, (int, float)) and isinstance(qty_n, (int, float)) \
+                and isinstance(pres_n, (int, float)):
+            expected = unit_n * qty_n
+            if abs(pres_n - expected) > 1:
+                errors.append({
+                    "row": idx + 1, "field": "처방금액",
+                    "msg": f"처방금액 {pres_n:.0f} ≠ 단가 {unit_n} × 수량 {qty_n} = {expected:.0f}",
+                })
+
+        # 정산금액 < 처방금액
+        if isinstance(pres_n, (int, float)) and isinstance(sett_n, (int, float)):
+            if sett_n < pres_n - 1:
+                warnings.append({
+                    "row": idx + 1, "field": "정산금액",
+                    "msg": f"정산금액 {sett_n:.0f} < 처방금액 {pres_n:.0f} (보통 정산 ≥ 처방 + VAT)",
+                })
+
+        # 음수·0 단가/수량
+        for label, val in (("단가", unit_n), ("수량", qty_n)):
+            if isinstance(val, (int, float)) and val <= 0:
+                warnings.append({"row": idx + 1, "field": label,
+                                 "msg": f"{label}이 0 또는 음수: {val}"})
+
+        # 사업자번호 형식
+        if biz_id and not biz_pattern.match(str(biz_id).strip()):
+            warnings.append({"row": idx + 1, "field": "처방 병원 사업자번호",
+                             "msg": f"형식 이상: {biz_id} (10자리 또는 NNN-NN-NNNNN)"})
+
+        # 중복 (정산코드, 제품명)
+        if code and product:
+            key = (str(code), str(product))
+            if key in seen_keys:
+                warnings.append({
+                    "row": idx + 1, "field": "_duplicate",
+                    "msg": f"row {seen_keys[key]} 와 같은 (정산코드={code}, 제품명={product}) 중복",
+                })
+            else:
+                seen_keys[key] = idx + 1
+
+        # 합계
+        if isinstance(pres_n, (int, float)):
+            total_amount += pres_n
+        if isinstance(sett_n, (int, float)):
+            total_settlement += sett_n
+
+    return _ok(
+        item_count=len(items),
+        errors=errors,
+        warnings=warnings,
+        error_count=len(errors),
+        warning_count=len(warnings),
+        summary={
+            "total_prescription": round(total_amount, 2),
+            "total_settlement": round(total_settlement, 2),
+            "has_blockers": len(errors) > 0,
+        },
+        note=(
+            "errors > 0 이면 cocso_settlement_create 호출 전 사용자에게 알리고 "
+            "수정 의향 확인. warnings 만 있으면 진행하되 사용자에게 요약."
+        ),
+    )
+
+
+VALIDATE_SCHEMA = {
+    "name": "cocso_settlement_validate",
+    "description": (
+        "정산 items 배열을 cocso_settlement_create 호출 전에 자동 검증. "
+        "처방금액 = 단가×수량 / 정산금액 ≥ 처방금액 / 핵심 컬럼 누락 / "
+        "사업자번호 형식 / 음수·0 단가 / (정산코드, 제품명) 중복을 감지. "
+        "errors > 0 이면 사용자 확인 필수."
+    ),
+    "parameters": {
+        "type": "object",
+        "properties": {
+            "items": {
+                "type": "array",
+                "description": "cocso_settlement_create 와 동일한 items 배열",
+                "items": {"type": "object"},
+            },
+        },
+        "required": ["items"],
+    },
+}
+
+
+# ---------------------------------------------------------------------------
 # register
 # ---------------------------------------------------------------------------
 
@@ -335,6 +488,13 @@ def register(ctx) -> None:
         toolset="cocso-settlement",
         schema=INFO_SCHEMA,
         handler=cocso_settlement_template_info,
+        check_fn=_check_requirements,
+    )
+    ctx.register_tool(
+        name=VALIDATE_SCHEMA["name"],
+        toolset="cocso-settlement",
+        schema=VALIDATE_SCHEMA,
+        handler=cocso_settlement_validate,
         check_fn=_check_requirements,
     )
 
