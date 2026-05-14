@@ -145,8 +145,43 @@ def _check_gateway_service_linger(issues: list[str]) -> None:
         check_warn("Could not verify systemd linger", f"({linger_detail})")
 
 
+def _run_quick_healthcheck() -> int:
+    """Lightweight healthcheck for Docker / k8s liveness probes.
+
+    Exits 0 if minimum runtime sanity holds:
+      - Python imports succeed (cocso_cli.config, plugins.cocso_plugin)
+      - DEFAULT_CONFIG plugins.enabled lists cocso_plugin
+      - $COCSO_HOME exists or can be created
+
+    Exits 1 (with brief stderr message) on any failure.
+    Designed to run in < 1s with no network IO.
+    """
+    import sys
+    try:
+        from cocso_cli.config import DEFAULT_CONFIG
+        if "cocso_plugin" not in (DEFAULT_CONFIG.get("plugins", {}) or {}).get("enabled", []):
+            print("healthcheck: cocso_plugin not enabled in DEFAULT_CONFIG", file=sys.stderr)
+            return 1
+        from plugins.cocso_plugin import sandbox, audit, excel, settlement, mcp_inventory  # noqa: F401
+        from cocso_core.cocso_constants import get_cocso_home
+        home = get_cocso_home()
+        try:
+            home.mkdir(parents=True, exist_ok=True)
+        except Exception as exc:
+            print(f"healthcheck: COCSO_HOME not writable ({home}): {exc}", file=sys.stderr)
+            return 1
+        print("ok")
+        return 0
+    except Exception as exc:
+        print(f"healthcheck: {exc}", file=sys.stderr)
+        return 1
+
+
 def run_doctor(args):
     """Run diagnostic checks."""
+    if getattr(args, "quick", False):
+        return _run_quick_healthcheck()
+
     should_fix = getattr(args, 'fix', False)
 
     # Doctor runs from the interactive CLI, so CLI-gated tool availability

@@ -209,6 +209,90 @@ class TestSlashCommand:
         assert "session_start" in out
 
 
+class TestRotation:
+    def test_no_rotation_when_below_threshold(self, audit, tmp_path):
+        mod, home = audit
+        log = home / "audit" / "small.jsonl"
+        log.parent.mkdir(exist_ok=True)
+        log.write_text("x" * 100)
+        rotated = mod._maybe_rotate(log, max_bytes=1_000_000)
+        assert rotated is False
+        assert log.exists()
+        assert not list(log.parent.glob("*.gz"))
+
+    def test_rotation_when_above_threshold(self, audit, tmp_path):
+        mod, home = audit
+        log = home / "audit" / "big.jsonl"
+        log.parent.mkdir(exist_ok=True)
+        log.write_text("x" * 5000)
+        rotated = mod._maybe_rotate(log, max_bytes=1000)
+        assert rotated is True
+        assert not log.exists()  # 원본 삭제
+        archives = list(log.parent.glob("big.jsonl.*.gz"))
+        assert len(archives) == 1
+
+    def test_rotation_disabled_when_max_zero(self, audit, tmp_path):
+        mod, home = audit
+        log = home / "audit" / "x.jsonl"
+        log.parent.mkdir(exist_ok=True)
+        log.write_text("x" * 1_000_000)
+        assert mod._maybe_rotate(log, max_bytes=0) is False
+
+    def test_purge_old_archives(self, audit, tmp_path):
+        import time
+        mod, home = audit
+        log_dir = home / "audit"
+        log_dir.mkdir(exist_ok=True)
+        old = log_dir / "old.jsonl.20200101.gz"
+        new = log_dir / "new.jsonl.20260101.gz"
+        old.write_text("old")
+        new.write_text("new")
+        # 100 일 전으로 mtime 셋업
+        very_old = time.time() - 100 * 86400
+        os_utime(old, very_old)
+        deleted = mod._purge_old_archives(log_dir, retain_days=90)
+        assert deleted == 1
+        assert not old.exists()
+        assert new.exists()  # 최근 archive 보존
+
+    def test_purge_disabled_when_zero_retain(self, audit, tmp_path):
+        mod, home = audit
+        log_dir = home / "audit"
+        log_dir.mkdir(exist_ok=True)
+        old = log_dir / "old.jsonl.x.gz"
+        old.write_text("x")
+        os_utime(old, time.time() - 1000 * 86400)
+        assert mod._purge_old_archives(log_dir, retain_days=0) == 0
+        assert old.exists()
+
+    def test_session_end_triggers_rotation(self, audit, tmp_path):
+        mod, home = audit
+        # 작은 max_file_bytes 로 force rotation
+        cfg = mod._load_config()
+        cfg["rotation"]["max_file_bytes"] = 100
+        mod._CACHE["cfg"] = cfg
+
+        sid = "test-rot"
+        # 큰 user message 로 파일 부풀리기
+        for _ in range(20):
+            mod.on_user_turn(session_id=sid, user_message="x" * 500, model="m")
+        log = home / "audit" / f"{sid}.jsonl"
+        assert log.exists() and log.stat().st_size > 100
+
+        mod.on_session_end(session_id=sid, completed=True)
+        # rotation happened
+        archives = list(log.parent.glob(f"{sid}.jsonl.*.gz"))
+        assert len(archives) == 1
+
+
+# os.utime helper
+import os as _os
+import time
+
+def os_utime(path, t):
+    _os.utime(path, (t, t))
+
+
 class TestRegister:
     def test_register_attaches_six_hooks(self, audit):
         mod, _ = audit

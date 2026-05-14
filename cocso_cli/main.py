@@ -6153,6 +6153,11 @@ def main():
     doctor_parser.add_argument(
         "--fix", action="store_true", help="Attempt to fix issues automatically"
     )
+    doctor_parser.add_argument(
+        "--quick", action="store_true",
+        help="Healthcheck mode — exit 0 if config + plugin OK, exit 1 otherwise. "
+             "Suitable for Docker / k8s healthcheck.",
+    )
     doctor_parser.set_defaults(func=cmd_doctor)
 
     # =========================================================================

@@ -22,6 +22,28 @@ services:
     container_name: cocso
     restart: unless-stopped
     network_mode: host
+    # Resource limits — OOM 디버그 가능, 노드 보호.
+    deploy:
+      resources:
+        limits:
+          memory: 2G
+          cpus: "2.0"
+        reservations:
+          memory: 256M
+    # 로그 driver — 무한 로그 방지. JSON file rotation.
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "5"
+    # Healthcheck — k8s/swarm 자동 재시작 trigger. cocso doctor --quick 는
+    # 1초 안에 끝나는 lightweight 검사 (config + plugin import).
+    healthcheck:
+      test: ["CMD", "/opt/cocso/cocso", "doctor", "--quick"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
     volumes:
       - ~/.cocso:/opt/data
     environment:

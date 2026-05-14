@@ -46,6 +46,12 @@ DEFAULT_CONFIG: Dict[str, Any] = {
     # Full-fidelity capture is rarely needed; truncation keeps files
     # scannable and avoids leaking long prompt content.
     "max_text_chars": 500,
+    # Log rotation — 디스크 무한 증가 방지. 세션별 .jsonl 파일이
+    # 임계 넘으면 .jsonl.<ts>.gz 로 압축 보관. 보관 기간 후 삭제.
+    "rotation": {
+        "max_file_bytes": 5_000_000,    # 5 MB 넘으면 gzip rotate
+        "retain_days": 90,              # gzip 90일 후 삭제 (0 = 영구)
+    },
     # Per-session sliding-window rate limit on tool calls.
     # 정산서 변환 1건 = sniff + read + 보강 5~10 + create = ~15 호출.
     # 사용자가 연속 2~3건 처리하는 흔한 시나리오 + post_tool_call 자기
@@ -140,6 +146,81 @@ def _log_dir() -> Path:
 
 
 # ---------------------------------------------------------------------------
+# Log rotation — 디스크 무한 증가 방지
+# ---------------------------------------------------------------------------
+
+def _maybe_rotate(path: Path, max_bytes: int) -> bool:
+    """파일 크기가 max_bytes 넘으면 gzip 으로 rename 후 새 파일 시작.
+
+    Returns True if rotation happened. Best-effort: 실패해도 audit 계속.
+    """
+    if max_bytes <= 0:
+        return False
+    try:
+        if not path.exists() or path.stat().st_size <= max_bytes:
+            return False
+    except OSError:
+        return False
+    try:
+        import gzip
+        from datetime import datetime as _dt
+        ts = _dt.now().strftime("%Y%m%d-%H%M%S")
+        archive = path.with_suffix(path.suffix + f".{ts}.gz")
+        with path.open("rb") as src, gzip.open(archive, "wb") as dst:
+            dst.write(src.read())
+        path.unlink()
+        logger.info("audit log rotated: %s -> %s", path.name, archive.name)
+        return True
+    except Exception as exc:
+        logger.warning("audit log rotation failed for %s: %s", path, exc)
+        return False
+
+
+def _purge_old_archives(log_dir: Path, retain_days: int) -> int:
+    """retain_days 지난 .gz 보관본 삭제. retain_days=0 이면 영구 보관.
+
+    Returns count of files deleted.
+    """
+    if retain_days <= 0:
+        return 0
+    try:
+        import time as _time
+        cutoff = _time.time() - retain_days * 86400
+    except Exception:
+        return 0
+    deleted = 0
+    try:
+        for f in log_dir.glob("*.gz"):
+            try:
+                if f.stat().st_mtime < cutoff:
+                    f.unlink()
+                    deleted += 1
+            except OSError:
+                continue
+    except Exception:
+        pass
+    if deleted:
+        logger.info("audit log purge: %d archive(s) older than %d days", deleted, retain_days)
+    return deleted
+
+
+def _rotate_and_purge(session_id: str) -> None:
+    """on_session_end 마다 호출 — 해당 세션 파일 rotate 시도 + 오래된 archive 정리.
+
+    Hot path 아니라 안전하게 best-effort.
+    """
+    cfg = _load_config()
+    rot = cfg.get("rotation") or {}
+    max_bytes = int(rot.get("max_file_bytes", 0) or 0)
+    retain_days = int(rot.get("retain_days", 0) or 0)
+    log_dir = _log_dir()
+    if max_bytes > 0 and session_id:
+        _maybe_rotate(log_dir / f"{session_id}.jsonl", max_bytes)
+    if retain_days > 0:
+        _purge_old_archives(log_dir, retain_days)
+
+
+# ---------------------------------------------------------------------------
 # Helpers
 # ---------------------------------------------------------------------------
 
@@ -192,6 +273,11 @@ def on_session_end(session_id: str = "", completed: bool = False, interrupted: b
     # release rate-limit bucket so the deque doesn't grow unbounded
     with _LOCK:
         _RATE_BUCKETS.pop(session_id, None)
+    # Best-effort log rotation + archive purge (off critical path).
+    try:
+        _rotate_and_purge(session_id)
+    except Exception as exc:
+        logger.debug("rotate_and_purge failed for %s: %s", session_id, exc)
 
 
 def on_user_turn(session_id: str = "", user_message: str = "", model: str = "",
