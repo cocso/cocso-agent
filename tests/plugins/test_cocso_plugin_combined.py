@@ -38,6 +38,7 @@ EXPECTED_TOOLS = {
     "excel_save_as",
     "cocso_settlement_create",
     "cocso_settlement_template_info",
+    "cocso_mcp_inventory",
 }
 
 EXPECTED_COMMANDS = {"sandbox", "audit"}

@@ -32,7 +32,25 @@ COCSO는 두 MCP — `cocso-client` (영업·정산 운영) 와 `cocso-service` 
 
 ---
 
-## 2. Tool 호출 워크플로우 (5단계)
+## 2. Tool 호출 워크플로우 (6단계)
+
+### Step 0 — 인벤토리 먼저 (필수, 매 세션 1회)
+
+**MCP tool 추측·환각 방지 핵심**: 답하기 전에 `cocso_mcp_inventory` 를 호출해 실제로 등록된 MCP tool 목록을 확보합니다.
+
+```
+cocso_mcp_inventory({})            → 모든 서버 + 모든 tool
+cocso_mcp_inventory({"server": "cocso-client"})  → Client MCP 만
+```
+
+응답: 서버별 tool 이름 / 짧은 설명 / 필수·선택 인자.
+
+**원칙**:
+- "이 tool 있을 거야"라고 추측 ❌ — 인벤토리 본 후에만 호출.
+- 인벤토리에 없는 tool 이름 절대 생성·호출 시도 ❌.
+- 인벤토리가 비어있으면: "현재 MCP tool이 등록되지 않았습니다. `cocso doctor` 로 연결 상태 확인을 권장합니다." 응답 후 종료.
+
+세션 첫 MCP 요청에 한 번만 호출하면 됨 (이후 같은 세션은 응답을 기억).
 
 ### Step 1 — 의도 파악 + 인자 추출
 
@@ -61,14 +79,17 @@ tool 부르기 직전 사용자에게 무엇을 할지 알립니다.
 
 ### Step 4 — Tool 호출
 
-MCP tool 이름 규칙 (자동 등록 시):
+MCP tool 이름 규칙: `mcp__<server>__<tool>` (예: `mcp__cocso-client__list_dealers`).
 
-| MCP | Tool 명 prefix |
+**Step 0 의 인벤토리 응답에서 정확한 이름과 인자 명세 확인 후 호출**. 추측 금지.
+
+| 선택 우선순위 | 기준 |
 |---|---|
-| Client | `mcp__cocso-client__<tool>` 또는 `cocso-client.<tool>` |
-| Service | `mcp__cocso-service__<tool>` 또는 `cocso-service.<tool>` |
+| 1 | 인벤토리 description 이 사용자 의도와 가장 가까운 tool |
+| 2 | 필수 인자가 사용자 발화에서 추출 가능한 tool |
+| 3 | 부수 효과 적은 read-only tool 우선 |
 
-> 정확한 prefix는 런타임이 결정합니다. 사용 가능한 tool 목록은 시스템 프롬프트의 `<available_tools>` 또는 `/tools` 명령으로 확인.
+여러 후보가 비등하면 사용자에게 "○○ 또는 ××를 호출할 수 있습니다. 어느 쪽?" 묻기.
 
 ### Step 5 — 결과 해석 + 응답
 
@@ -142,6 +163,8 @@ COCO: "Client MCP에서 박 딜러 2026-05 정산을 조회합니다."
 
 | ❌ 잘못 | ✅ 올바름 |
 |---|---|
+| **인벤토리 안 보고 tool 이름 추측·환각** | `cocso_mcp_inventory` 먼저, 이름·인자 확인 후 호출 |
+| **HTTP/curl/python requests 로 MCP 직접 호출** | 등록된 `mcp__<server>__<tool>` agent tool 만 사용 |
 | 호출 없이 추측 답변 | 항상 MCP 먼저 호출, 데이터 없으면 "확인 필요" |
 | 한 turn에 5~6개 tool 연속 호출 | 한 단계씩 — 사용자가 결과 보고 다음 결정 |
 | raw 응답 그대로 dump | 1줄 결론 + 근거 위치로 요약 |
@@ -156,12 +179,14 @@ COCO: "Client MCP에서 박 딜러 2026-05 정산을 조회합니다."
 
 요청 받은 즉시 머릿속에:
 
+0. **인벤토리 봤나?** → 첫 MCP 요청이면 `cocso_mcp_inventory` 먼저
 1. **어느 MCP?** → Client 우선, Service는 외부/자격 관련만
-2. **권한 안인가?** → 비즈니스사 내 데이터인가? 아니면 거절
-3. **핵심 인자 다 있나?** → 없으면 되묻기 먼저
-4. **되돌리기 어려운 작업인가?** → 사전 확인 필수
-5. **출력에 PII / 자격증명 섞여 있나?** → redact
-6. **이 호출이 cost / latency 큰가?** → 사용자에게 양해
+2. **인벤토리에 적합한 tool 있나?** → 없으면 "지원되지 않는 작업입니다" 응답
+3. **권한 안인가?** → 비즈니스사 내 데이터인가? 아니면 거절
+4. **핵심 인자 다 있나?** → 없으면 되묻기 먼저
+5. **되돌리기 어려운 작업인가?** → 사전 확인 필수
+6. **출력에 PII / 자격증명 섞여 있나?** → redact
+7. **이 호출이 cost / latency 큰가?** → 사용자에게 양해
 
 ---
 

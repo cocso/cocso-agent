@@ -17,13 +17,13 @@ from __future__ import annotations
 
 import logging
 
-from . import sandbox, audit, excel, settlement
+from . import sandbox, audit, excel, settlement, mcp_inventory
 
 logger = logging.getLogger(__name__)
 
 
 def register(ctx) -> None:
-    for sub in (sandbox, audit, excel, settlement):
+    for sub in (sandbox, audit, excel, settlement, mcp_inventory):
         try:
             sub.register(ctx)
         except Exception as exc:
