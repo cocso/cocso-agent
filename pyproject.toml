@@ -33,6 +33,9 @@ dependencies = [
   # MCP — core protocol for connecting to Client/Service MCP servers.
   # Promoted from optional extra because cocso의 회사 데이터 접근 통로 자체.
   "mcp>=1.2.0,<2",
+  # Excel (.xlsx) read/write — used by cocso_excel plugin (정산표·거래처
+  # 시트 등 비즈니스사 일상 데이터). pure-Python, 의존 적음.
+  "openpyxl>=3.1,<4",
 ]
 
 [project.urls]

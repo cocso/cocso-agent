@@ -1108,8 +1108,9 @@ DEFAULT_CONFIG = {
         # Bundled plugins shipped on by default for client deployments:
         #   - soul_sandbox: blocks agent writes to SOUL.md, .env, credentials
         #   - cocso_audit:  per-session JSONL audit log + tool-call rate limit
+        #   - cocso_excel:  Excel (.xlsx) 6 tools (open / read / write / add_sheet / save_as)
         # Add more with ``cocso plugins enable <name>``.
-        "enabled": ["soul_sandbox", "cocso_audit"],
+        "enabled": ["soul_sandbox", "cocso_audit", "cocso_excel"],
         "disabled": [],
     },
 
