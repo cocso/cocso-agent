@@ -38,6 +38,10 @@ EXPECTED_TOOLS = {
     "excel_save_as",
     "cocso_settlement_create",
     "cocso_settlement_template_info",
+    "cocso_settlement_sniff",
+    "cocso_settlement_mapping_save",
+    "cocso_settlement_mapping_match",
+    "cocso_settlement_mapping_list",
     "cocso_mcp_inventory",
 }
 

@@ -103,6 +103,43 @@ MCP tool 이름 규칙: `mcp__<server>__<tool>` (예: `mcp__cocso-client__list_d
 
 여러 후보가 비등하면 사용자에게 "○○ 또는 ××를 호출할 수 있습니다. 어느 쪽?" 묻기.
 
+### 알려진 server tool 카탈로그 (참고용 — 정확한 이름은 인벤토리 결과 우선)
+
+#### `cocso-client` (영업·정산 운영, ~33 tool, prefix `client_`)
+
+| 카테고리 | tool 패턴 | 용도 |
+|---|---|---|
+| **딜러** | `client_list_dealers`, `client_lookup_dealers`, `client_get_dealer` | 딜러 목록·검색·상세 |
+| **거래 병원** | `client_list_partner_hospitals`, `client_lookup_partner_hospitals`, `client_get_partner_hospital`, `client_check_partner_hospital_business_number` | 거래처 정보 |
+| **약국** | `client_list_partner_hospital_pharmacies`, `client_get_partner_hospital_pharmacy` | 연계 약국 |
+| **정산코드 / 알파율** | `client_list_settlement_code_histories`, `client_get_active_settlement_codes`, `client_get_settlement_code_history`, `client_list_alpha_rates`, `client_get_alpha_rate` | 정산코드·요율 이력 |
+| **정산제약사** | `client_list_client_settlers`, `client_lookup_client_settlers`, `client_lookup_settlers`, `client_get_client_settler` | 정산처 정보 |
+| **수수료 / 정산 정책** | `client_list_settlers_with_dealer_commission`, `client_get_settler_base_medicine_commission`, `client_list_settler_medicine_commissions`, `client_get_settlement_range_group_by_month`, `client_list_settlement_range_group_months`, `client_get_minimum_settlement_amount` | 수수료·정산구간·최소액 |
+| **약품 / 비고** | `client_search_medicines_by_dealer`, `client_lookup_medicines`, `client_get_medicine_info`, `client_search_medicine_notes`, `client_list_client_medicine_notes`, `client_get_client_medicine_note` | 약품 검색·EDI 정보 |
+| **회사** | `client_get_my_company` | 자기 회사 정보 |
+
+#### `cocso-service` (외부 서비스, ~17 tool, prefix `service_`)
+
+| 카테고리 | tool 패턴 | 용도 |
+|---|---|---|
+| **약품** | `service_search_medicines`, `service_get_medicine_stock`, `service_get_medicine_notes` | 약품 검색·재고·비고 |
+| **정산자** | `service_get_settlers`, `service_search_settlers`, `service_get_eligibility_settlers`, `service_check_settler_eligibility` | 정산처·자격 |
+| **제안서** | `service_list_proposals`, `service_get_proposal`, `service_create_proposal`, `service_update_proposal`, `service_delete_proposal`, `service_add_proposal_medicine`, `service_remove_proposal_medicine` | 제안서 CRUD |
+| **위치** | `service_get_locations` | 위치 정보 |
+| **헬스체크** | `service_ping` | 무인증 ping |
+
+### Tool 이름 패턴 규칙
+
+- **ID 필요할 때**: `*_lookup_*` / `*_search_*` 먼저 (이름→ID).
+- **단건 조회**: `*_get_*`.
+- **다건/페이지네이션**: `*_list_*` (page, page_per_count 인자).
+- **검색**: `*_search_*` (search_word + filter).
+- **변경**: `*_create_*` / `*_update_*` / `*_delete_*` — 사용자 사전 확인 필수.
+
+### 카탈로그 신뢰성
+
+위 표는 **참고용**. 실제는 항상 `cocso_mcp_inventory` 응답이 진실. 카탈로그에 없는 tool 이 인벤토리에 있으면 인벤토리 우선. 서버 측 변경 잦음.
+
 ### Step 5 — 결과 해석 + 응답
 
 raw 응답을 그대로 dump하지 않습니다.

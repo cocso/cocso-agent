@@ -46,6 +46,37 @@ metadata:
 
 ---
 
+## 사용 가능한 tool
+
+### 클라이언트 측 (perception + 변환)
+
+| Tool | 용도 |
+|---|---|
+| `cocso_settlement_sniff(path, sheet?)` | 헤더 자동 감지 + COCSO 표준 매칭 점수. 첫 분석 단계 필수. |
+| `cocso_settlement_mapping_match(source_headers)` | 같은 양식 preset 있나? 있으면 즉시 사용 (사용자 확인 생략). |
+| `cocso_settlement_mapping_save(name, source_headers, mapping)` | 사용자 확인 매핑을 preset 저장. 다음 변환 자동화. |
+| `cocso_settlement_mapping_list()` | 저장된 preset 목록. |
+| `excel_open(path)` / `excel_read_range(path, sheet, range)` | 원본 데이터 읽기. |
+| `cocso_settlement_create(output_path, company_name, items, overwrite?)` | 표준 템플릿 + 데이터 → xlsx 저장. |
+
+### 데이터 보강 (MCP server 활용)
+
+빠진 컬럼이 있으면 MCP에서 자동 보강 시도:
+
+| 빠진 컬럼 | 사용할 MCP tool |
+|---|---|
+| 보험코드 / EDI | `mcp__cocso-service__service_search_medicines(search_word=제품명)` 응답에 EDI 포함 |
+| 제약사 ID | `mcp__cocso-service__service_get_settlers()` 또는 `service_search_settlers` |
+| 정산코드 (월별 적용) | `mcp__cocso-client__client_get_active_settlement_codes(applied_at=YYYY-MM)` |
+| 알파율 | `mcp__cocso-client__client_get_alpha_rate(...)` |
+| 수수료 단가 | `mcp__cocso-client__client_get_settler_base_medicine_commission(...)` |
+| 거래처 사업자번호 | `mcp__cocso-client__client_lookup_partner_hospitals(name=병원명)` |
+| 의약품 상세 정보 | `mcp__cocso-client__client_get_medicine_info(edi_code, settler_id)` |
+
+매칭 모호 / 다중 결과 → 사용자 확인. 정확한 server tool 이름은 항상 `cocso_mcp_inventory` 우선.
+
+---
+
 ## 3. 핵심 시나리오 — 다른 회사 양식 → COCSO 표준 변환
 
 **주 use case**: 사용자가 자기 회사·거래처 양식 엑셀을 보내면, COCO가 그걸 COCSO 표준 정산 수수료 내역서 양식으로 변환해 새 파일로 저장.
