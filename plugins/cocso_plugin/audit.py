@@ -64,6 +64,23 @@ DEFAULT_CONFIG: Dict[str, Any] = {
     "redact_tool_args": [
         "password", "secret", "token", "api_key", "key",
     ],
+    # PII patterns — text fields (assistant_response / tool result body)
+    # 안에서 정규식 매칭되면 ``[REDACTED:<type>]`` 로 치환. 컴플라이언스
+    # (개인정보보호법) 대응. 0 패턴이면 비활성.
+    "pii_patterns": {
+        # 한국 주민등록번호 (NNNNNN-NNNNNNN)
+        "rrn": r"\b\d{6}[-]\d{7}\b",
+        # 사업자등록번호 (NNN-NN-NNNNN)
+        "biz_id": r"\b\d{3}-\d{2}-\d{5}\b",
+        # 휴대전화 (01N-NNNN-NNNN, 010 1234 5678 등)
+        "phone": r"\b01[016789][- ]?\d{3,4}[- ]?\d{4}\b",
+        # 카드 번호 (4×4 그룹)
+        "card": r"\b\d{4}[- ]\d{4}[- ]\d{4}[- ]\d{4}\b",
+        # 이메일
+        "email": r"\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}\b",
+        # API key 모양 (cocso_mcp_..., sk-..., xoxb-...)
+        "api_key_shape": r"\b(?:cocso_mcp_|sk-[A-Za-z]+-|xoxb-|xapp-|ghp_|gho_)[A-Za-z0-9_-]{16,}\b",
+    },
 }
 
 
@@ -242,6 +259,43 @@ def _redact_args(args: Dict[str, Any], redact_keys: list) -> Dict[str, Any]:
     return out
 
 
+# Compile PII patterns once per config-load — `_pii_compiled` cached on the
+# config dict itself so reload (mtime change) gets fresh compile.
+import re as _re
+
+def _get_pii_patterns(cfg: Dict[str, Any]) -> List[tuple]:
+    """Return list of (label, compiled_regex). Caches on cfg dict."""
+    cached = cfg.get("_pii_compiled")
+    if cached is not None:
+        return cached
+    raw = cfg.get("pii_patterns") or {}
+    out = []
+    for label, pat in raw.items():
+        if not pat:
+            continue
+        try:
+            out.append((label, _re.compile(pat)))
+        except Exception as exc:
+            logger.warning("audit: invalid pii_pattern %s: %s", label, exc)
+    cfg["_pii_compiled"] = out
+    return out
+
+
+def _redact_pii(text: Any, cfg: Dict[str, Any]) -> Any:
+    """text 안 PII 패턴을 ``[REDACTED:<label>]`` 로 치환.
+
+    String 아니면 그대로 반환. 패턴 0 개면 그대로.
+    """
+    if not isinstance(text, str) or not text:
+        return text
+    patterns = _get_pii_patterns(cfg)
+    if not patterns:
+        return text
+    for label, regex in patterns:
+        text = regex.sub(f"[REDACTED:{label}]", text)
+    return text
+
+
 def _write(session_id: str, event: str, **fields) -> None:
     if not session_id:
         session_id = "_unknown"
@@ -284,7 +338,8 @@ def on_user_turn(session_id: str = "", user_message: str = "", model: str = "",
                  is_first_turn: bool = False, **_kw) -> Optional[Dict[str, Any]]:
     cfg = _load_config()
     n = int(cfg.get("max_text_chars", 500))
-    _write(session_id, "user", text=_truncate(user_message, n),
+    safe = _redact_pii(user_message, cfg)
+    _write(session_id, "user", text=_truncate(safe, n),
            model=model, first_turn=is_first_turn)
     return None  # no context injection
 
@@ -293,7 +348,8 @@ def on_assistant_turn(session_id: str = "", user_message: str = "",
                       assistant_response: str = "", model: str = "", **_kw) -> None:
     cfg = _load_config()
     n = int(cfg.get("max_text_chars", 500))
-    _write(session_id, "assistant", text=_truncate(assistant_response, n), model=model)
+    safe = _redact_pii(assistant_response, cfg)
+    _write(session_id, "assistant", text=_truncate(safe, n), model=model)
 
 
 def on_tool_pre(tool_name: str = "", args: Optional[Dict[str, Any]] = None,
@@ -331,13 +387,14 @@ def on_tool_post(tool_name: str = "", args: Optional[Dict[str, Any]] = None,
     cfg = _load_config()
     n = int(cfg.get("max_text_chars", 500))
     redact = list(cfg.get("redact_tool_args") or [])
+    safe_result = _redact_pii(result or "", cfg)
     _write(
         task_id,
         "tool",
         tool=tool_name,
         args=_redact_args(args or {}, redact),
         result_size=len(result or ""),
-        result_preview=_truncate(result or "", n),
+        result_preview=_truncate(safe_result, n),
         duration_ms=int(duration_ms or 0),
     )
 

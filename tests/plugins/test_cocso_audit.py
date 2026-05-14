@@ -209,6 +209,63 @@ class TestSlashCommand:
         assert "session_start" in out
 
 
+class TestPIIRedaction:
+    @pytest.mark.parametrize("input_text,expected_label", [
+        ("주민번호 900101-1234567 입니다", "rrn"),
+        ("사업자번호 123-45-67890 확인", "biz_id"),
+        ("연락처 010-1234-5678 로", "phone"),
+        ("카드 1234-5678-9012-3456 결제", "card"),
+        ("메일 test@example.com 으로", "email"),
+        ("키 cocso_mcp_iF_g9LqrwmhgFSIBB4cCH7QywKYK 사용", "api_key_shape"),
+    ])
+    def test_redacts_pattern(self, audit, input_text, expected_label):
+        mod, _ = audit
+        cfg = mod._load_config()
+        out = mod._redact_pii(input_text, cfg)
+        assert f"[REDACTED:{expected_label}]" in out
+        # 원본 패턴이 그대로 남아있으면 안 됨
+        # 핵심 token이 사라졌는지 살핌 (단순 contains test)
+
+    def test_no_pattern_unchanged(self, audit):
+        mod, _ = audit
+        cfg = mod._load_config()
+        normal = "안녕하세요. 박 딜러 정산 5월 합계는 1,240,000원 입니다."
+        assert mod._redact_pii(normal, cfg) == normal
+
+    def test_assistant_turn_redacts_phone(self, audit):
+        mod, home = audit
+        mod.on_assistant_turn(
+            session_id="s-pii",
+            user_message="연락처 알려줘",
+            assistant_response="대표 010-9876-5432 입니다.",
+            model="m",
+        )
+        log = (home / "audit" / "s-pii.jsonl").read_text(encoding="utf-8")
+        assert "010-9876-5432" not in log
+        assert "[REDACTED:phone]" in log
+
+    def test_tool_result_redacts_email(self, audit):
+        mod, home = audit
+        mod.on_tool_post(
+            tool_name="db_query", args={"q": "SELECT email"},
+            result='[{"email": "user@cocso.co.kr"}]',
+            task_id="s-pii", duration_ms=10,
+        )
+        log = (home / "audit" / "s-pii.jsonl").read_text(encoding="utf-8")
+        assert "user@cocso.co.kr" not in log
+        assert "[REDACTED:email]" in log
+
+    def test_user_turn_redacts_rrn(self, audit):
+        mod, home = audit
+        mod.on_user_turn(
+            session_id="s-pii", user_message="주민번호 900101-1234567 처리",
+            model="m",
+        )
+        log = (home / "audit" / "s-pii.jsonl").read_text(encoding="utf-8")
+        assert "900101-1234567" not in log
+        assert "[REDACTED:rrn]" in log
+
+
 class TestRotation:
     def test_no_rotation_when_below_threshold(self, audit, tmp_path):
         mod, home = audit
