@@ -192,6 +192,22 @@ class TestEmptyAndErrors:
             assert isinstance(inv.cocso_mcp_inventory(bad), str)
 
 
+class TestServerMeta:
+    def test_server_meta_present(self, inv, fake_registry):
+        out = _decode(inv.cocso_mcp_inventory({}))
+        assert "server_meta" in out
+        assert set(out["server_meta"].keys()) == {"cocso-client", "cocso-service"}
+        for s, meta in out["server_meta"].items():
+            assert "tool_count" in meta
+            assert "last_changed_iso" in meta  # may be None when no notify yet
+            assert meta["tool_count"] == len(out["tools"][s])
+
+    def test_volatility_note_present(self, inv, fake_registry):
+        out = _decode(inv.cocso_mcp_inventory({}))
+        assert "note" in out
+        assert "tool not found" in out["note"] or "추가" in out["note"]
+
+
 class TestRegister:
     def test_register_attaches_tool(self, inv):
         class FakeCtx:

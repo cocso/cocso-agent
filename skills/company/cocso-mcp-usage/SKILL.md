@@ -34,7 +34,7 @@ COCSO는 두 MCP — `cocso-client` (영업·정산 운영) 와 `cocso-service` 
 
 ## 2. Tool 호출 워크플로우 (6단계)
 
-### Step 0 — 인벤토리 먼저 (필수, 매 세션 1회)
+### Step 0 — 인벤토리 먼저 (필수)
 
 **MCP tool 추측·환각 방지 핵심**: 답하기 전에 `cocso_mcp_inventory` 를 호출해 실제로 등록된 MCP tool 목록을 확보합니다.
 
@@ -43,14 +43,26 @@ cocso_mcp_inventory({})            → 모든 서버 + 모든 tool
 cocso_mcp_inventory({"server": "cocso-client"})  → Client MCP 만
 ```
 
-응답: 서버별 tool 이름 / 짧은 설명 / 필수·선택 인자.
+응답: 서버별 tool 이름 / 짧은 설명 / 필수·선택 인자 / `last_changed_iso` (서버 측 마지막 변경 시각).
 
 **원칙**:
 - "이 tool 있을 거야"라고 추측 ❌ — 인벤토리 본 후에만 호출.
 - 인벤토리에 없는 tool 이름 절대 생성·호출 시도 ❌.
 - 인벤토리가 비어있으면: "현재 MCP tool이 등록되지 않았습니다. `cocso doctor` 로 연결 상태 확인을 권장합니다." 응답 후 종료.
 
-세션 첫 MCP 요청에 한 번만 호출하면 됨 (이후 같은 세션은 응답을 기억).
+#### 재조회 트리거 (변동성 대응)
+
+MCP 서버는 **언제든 tool이 추가·삭제·schema 변경**될 수 있음. 백엔드가 `tools/list_changed` notification을 보내면 cocso-agent registry는 자동 갱신되지만, 모델 측 인벤토리 캐시는 다음 시점에 **다시 호출**:
+
+| Trigger | 행동 |
+|---|---|
+| 세션 첫 MCP 요청 | 한 번 호출 |
+| 호출 결과가 `tool not found` / `unknown tool` | 즉시 재호출 후 재시도 (백엔드가 rename 했을 가능성) |
+| 호출 결과가 `invalid params` / `schema mismatch` | 재호출 → 새 schema 확인 → 인자 다시 매핑 |
+| 사용자가 "방금 기능 추가됐대" / "최근에 바뀜" 같은 힌트 | 재호출 |
+| 30분 이상 지난 후 다음 MCP 요청 | 재호출 (장기 세션 대비) |
+
+→ stale 인벤토리로 판단·실수 방지.
 
 ### Step 1 — 의도 파악 + 인자 추출
 

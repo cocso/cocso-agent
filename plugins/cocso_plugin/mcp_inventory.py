@@ -86,6 +86,26 @@ def _get_short_description(schema: Optional[Dict[str, Any]], fallback: str = "")
 # Tool: cocso_mcp_inventory
 # ---------------------------------------------------------------------------
 
+def _server_last_changed(server_name: str) -> Optional[str]:
+    """서버 측 마지막 ``tools/list_changed`` 수신 시각 (ISO 8601).
+
+    ``mcp_tool._servers[<name>]`` 객체가 dynamic discovery 시 업데이트하는
+    private 필드를 best-effort 로 읽음. 미지원/미연결이면 None.
+    """
+    try:
+        from tools import mcp_tool
+        srv = mcp_tool._servers.get(server_name)  # type: ignore[attr-defined]
+        if srv is None:
+            return None
+        for attr in ("_last_tools_changed_iso", "_last_tools_changed", "_tools_updated_at"):
+            v = getattr(srv, attr, None)
+            if v:
+                return str(v)
+    except Exception:
+        return None
+    return None
+
+
 def cocso_mcp_inventory(args: Dict[str, Any], **_kw) -> str:
     """List MCP tools currently registered, grouped by server."""
     server_filter = (args.get("server") or "").strip() or None
@@ -144,11 +164,27 @@ def cocso_mcp_inventory(args: Dict[str, Any], **_kw) -> str:
             ),
         )
 
+    # Per-server metadata (last-changed timestamp = 서버가 마지막으로
+    # tools/list_changed 보낸 시각). 모델이 stale 캐시 판단할 때 활용.
+    server_meta: Dict[str, Dict[str, Any]] = {}
+    for s in servers:
+        last = _server_last_changed(s)
+        server_meta[s] = {
+            "tool_count": len(grouped[s]),
+            "last_changed_iso": last,  # None 이면 한 번도 변경 알림 받은 적 없음
+        }
+
     return _ok(
         servers=servers,
         server_count=len(servers),
         total_tools=sum(len(v) for v in grouped.values()),
         tools=grouped,
+        server_meta=server_meta,
+        note=(
+            "MCP 서버는 언제든 tool 이 추가/삭제/변경될 수 있습니다. "
+            "호출 결과가 'tool not found' 또는 'invalid params' 면 이 "
+            "도구를 다시 호출해 최신 인벤토리를 받으세요."
+        ),
     )
 
 
